@@ -7,18 +7,18 @@ from dotenv import find_dotenv, load_dotenv
 # Hand-made modules
 from unzip import Unzipper
 from concatenation import DataFrameHandler
-from amedas import AmedasPoint
+from amedas import AmedasData, AmedasPoint
 
 
 AMD_MASTER_FILEPATH = "data/raw/amd_master.tsv"
-HALF_MESHGRID_SIZE = 0.4
+HALF_MESHGRID_SIZE = 0.2
 
 
 @click.command()
 @click.argument("input_dirpath", type=click.Path(exists=True))
 @click.argument("output_filepath", type=click.Path())
-# @click.argument("--output_filepath", "-o", type=click.Path())
-def main(input_dirpath, output_filepath):
+# @click.argument("--half_mashgrid_size", "-m", type=float, default=0.2)
+def main(input_dirpath, output_filepath, half_mashgrid_size):
     """ Runs data processing scripts to turn raw data from (../raw) into
         cleaned data ready to be analyzed (saved in ../processed).
     """
@@ -38,16 +38,21 @@ def main(input_dirpath, output_filepath):
     # print(dfh.df_list[0].head())
 
     # amedas information
-    amd = AmedasPoint(path.join(project_dir, AMD_MASTER_FILEPATH))
-    aid_near_ukishima = amd.get_near_amedas_points(
-        amd.LATLNGALT_UKISHIMA[0], amd.LATLNGALT_UKISHIMA[1], HALF_MESHGRID_SIZE
-    ).index
-    aid_near_ougizima = amd.get_near_amedas_points(
-        amd.LATLNGALT_OUGIZIMA[0], amd.LATLNGALT_OUGIZIMA[1], HALF_MESHGRID_SIZE
-    ).index
-    aid_near_yonekurayama = amd.get_near_amedas_points(
-        amd.LATLNGALT_YONEKURAYAMA[0], amd.LATLNGALT_YONEKURAYAMA[1], HALF_MESHGRID_SIZE
-    ).index
+    amedas_point = AmedasPoint(path.join(project_dir, AMD_MASTER_FILEPATH))
+    amedas_data = AmedasData()
+    amd_point_near_ukishima = amedas_point.get_near_amedas_points(
+        amedas_point.LATLNGALT_UKISHIMA[0], amedas_point.LATLNGALT_UKISHIMA[1], half_mashgrid_size
+    )
+    # amd_point_near_ougizima = amedas_point.get_near_amedas_points(
+    #     amedas_point.LATLNGALT_OUGIZIMA[0], amedas_point.LATLNGALT_OUGIZIMA[1], half_mashgrid_size
+    # )
+    # amd_point_near_yonekurayama = amd.get_near_amedas_points(
+    #     amedas_point.LATLNGALT_YONEKURAYAMA[0], amedas_point.LATLNGALT_YONEKURAYAMA[1], half_mashgrid_size
+    # )
+
+    amd_filepath = amedas_data.gen_filepath_list(amd_point_near_ukishima.index)
+    df_amd = amedas_data.retrive_amedas_data(amd_filepath, amd_point_near_ukishima["name"].as_matrix())
+    amedas_data.to_tsv(df_amd, path.join(amedas_data.INTERIM_DATA_BASEPATH, "amd_data_near_ukishima.tsv"))
 
 
 if __name__ == '__main__':
