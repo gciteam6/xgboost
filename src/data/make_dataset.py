@@ -9,11 +9,12 @@ from unzip import Unzipper
 from amedas import AmedasHandler
 from surface import SurfaceHandler
 from sola import SolarPhotovoltaicHandler
+from concatenation import DatasetCollector
 
 
-AMD_MASTER_FILEPATH = "data/raw/amd_master.tsv"
-SFC_MASTER_FILEPATH = "data/raw/sfc_master.tsv"
-TRAIN_KWH_FILEPATH = "data/raw/train_kwh.tsv"
+AMD_MASTER_FILENAME = "amd_master.tsv"
+SFC_MASTER_FILENAME = "sfc_master.tsv"
+TRAIN_KWH_FILENAME = "train_kwh.tsv"
 LOCATION = [
     "ukishima",
     "ougishima",
@@ -23,12 +24,12 @@ LOCATION = [
 
 @click.command()
 @click.argument("input_dirpath", type=click.Path(exists=True))
-@click.argument("output_filepath", type=click.Path())
 @click.option("--amd_half_mashgrid_size", "-a", type=float, default=0.2)
 @click.option("--scf_half_mashgrid_size", "-s", type=float, default=0.4)
-@click.option("--is_unzip", "-z", type=bool, default=False)
-def main(input_dirpath, output_filepath,
-         amd_half_mashgrid_size, scf_half_mashgrid_size,
+@click.option("--is_unzip", "-z", type=bool, default=True)
+def main(input_dirpath,
+         amd_half_mashgrid_size,
+         scf_half_mashgrid_size,
          is_unzip):
     """ Runs data processing scripts to turn raw data from (../raw) into
         cleaned data ready to be analyzed (saved in ../processed).
@@ -50,7 +51,7 @@ def main(input_dirpath, output_filepath,
     #
     # amedas information
     #
-    amd = AmedasHandler(path.join(project_dir, AMD_MASTER_FILEPATH))
+    amd = AmedasHandler(path.join(input_dirpath, AMD_MASTER_FILENAME))
 
     amd_point_near_ukishima = amd.get_near_observation_points(
         amd.LATLNGALT_UKISHIMA[0], amd.LATLNGALT_UKISHIMA[1], amd_half_mashgrid_size
@@ -68,13 +69,13 @@ def main(input_dirpath, output_filepath,
             LOCATION):
         amd_filepath = amd.gen_filepath_list(amd_point.index)
         df_amd = amd.retrieve_data(amd_filepath, amd_point["name"].as_matrix())
-        amd.to_tsv(df_amd, path.join(amd.INTERIM_DATA_BASEPATH, "amd_data_near_{l}.tsv".format(l=location)))
+        amd.to_tsv(df_amd, path.join(amd.INTERIM_DATA_BASEPATH, "amd_data_near.{l}.tsv".format(l=location)))
         logger.info('#3: gather amedas data and save as a middle file in {l} !'.format(l=location))
 
     #
     # surface weather information
     #
-    sfc = SurfaceHandler(path.join(project_dir, SFC_MASTER_FILEPATH))
+    sfc = SurfaceHandler(path.join(input_dirpath, SFC_MASTER_FILENAME))
 
     sfc_point_near_ukishima = sfc.get_near_observation_points(
         sfc.LATLNGALT_UKISHIMA[0], sfc.LATLNGALT_UKISHIMA[1], scf_half_mashgrid_size
@@ -92,22 +93,33 @@ def main(input_dirpath, output_filepath,
             LOCATION):
         sfc_filepath = sfc.gen_filepath_list(sfc_point.index)
         df_sfc = sfc.retrieve_data(sfc_filepath, sfc_point["name"].as_matrix())
-        sfc.to_tsv(df_sfc, path.join(sfc.INTERIM_DATA_BASEPATH, "sfc_data_near_{l}.tsv".format(l=location)))
+        sfc.to_tsv(df_sfc, path.join(sfc.INTERIM_DATA_BASEPATH, "sfc_data_near.{l}.tsv".format(l=location)))
         logger.info('#5: gather surface weather data and save as a middle file in {l} !'.format(l=location))
 
     #
     # train_kwh information
     #
     sola = SolarPhotovoltaicHandler()
-    df_train_kwh = sola.read_tsv(path.join(project_dir, TRAIN_KWH_FILEPATH))
+    df_train_kwh = sola.read_tsv(path.join(input_dirpath, TRAIN_KWH_FILENAME))
 
     for col_label, location in zip(
             [sola.LABEL_SOLA_UKISHIMA, sola.LABEL_SOLA_OUGISHIMA, sola.LABEL_SOLA_YONEKURAYAMA],
             LOCATION):
-        df_sola = df_train_kwh.loc[:, col_label]
-        sola.to_tsv(df_sola, path.join(sfc.INTERIM_DATA_BASEPATH, "sola_data_{l}.tsv".format(l=location)))
+        df_sola = df_train_kwh.loc[:, col_label].to_frame(name="kwh")
+        sola.to_tsv(df_sola, path.join(sola.INTERIM_DATA_BASEPATH, "sola_data.{l}.tsv".format(l=location)))
 
     logger.info('#6: get solar data and save as a middle file !')
+
+    #
+    # train_kwh information
+    #
+    collector = DatasetCollector()
+
+    for location in LOCATION:
+        location_filepath = collector.gen_filepath_list(location)
+        df_train_for_each_location = collector.retrieve_data(location_filepath)
+        collector.to_tsv(df_train_for_each_location, path.join(collector.PROCESSED_DATA_BASEPATH, "train_amd_sfc_kwh.{l}.tsv".format(l=location)))
+        logger.info('#7: generate train data and save as a processed file in {l} !'.format(l=location))
 
 
 if __name__ == '__main__':
