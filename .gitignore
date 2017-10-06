@@ -1,0 +1,19 @@
+# ignore data
+data/external/*
+data/interim/*
+data/processed/*
+data/raw/*
+
+# ignore files & folders related to vagrant
+.vagrant/
+Vagrantfile
+
+# ignore files & folders python development toolkits
+__pycache__/
+.idea/
+.ipynb_checkpoints/
+.python-version
+.py[cod]
+
+# a file remained
+!.gitkeep
