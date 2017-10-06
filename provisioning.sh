@@ -20,8 +20,7 @@ echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\n  eval "$(pyenv init -)"\nf
 
 source ~/.bashrc
 
-pyenv install 3.6.2  \
-    && pyenv global 3.6.2
-
-pip install --upgrade pip python-dateutil \
+pyenv install -s 3.6.2  \
+    && pyenv global 3.6.2 \
+    && pip install --upgrade pip python-dateutil \
     && pip --no-cache-dir install -r requirements.txt
