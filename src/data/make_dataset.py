@@ -15,6 +15,7 @@ from concatenation import DatasetCollector
 AMD_MASTER_FILENAME = "amd_master.tsv"
 SFC_MASTER_FILENAME = "sfc_master.tsv"
 TRAIN_KWH_FILENAME = "train_kwh.tsv"
+OBJECTIVE_COLUMN_NAME = "kwh"
 LOCATION = [
     "ukishima",
     "ougishima",
@@ -105,7 +106,7 @@ def main(input_dirpath,
     for col_label, location in zip(
             [sola.LABEL_SOLA_UKISHIMA, sola.LABEL_SOLA_OUGISHIMA, sola.LABEL_SOLA_YONEKURAYAMA],
             LOCATION):
-        df_sola = df_train_kwh.loc[:, col_label].to_frame(name="kwh")
+        df_sola = df_train_kwh.loc[:, col_label].to_frame(name=OBJECTIVE_COLUMN_NAME)
         sola.to_tsv(df_sola, path.join(sola.INTERIM_DATA_BASEPATH, "sola_data.{l}.tsv".format(l=location)))
 
     logger.info('#6: get solar data and save as a middle file !')
@@ -118,8 +119,14 @@ def main(input_dirpath,
     for location in LOCATION:
         location_filepath = collector.gen_filepath_list(location)
         df_train_for_each_location = collector.retrieve_data(location_filepath)
-        collector.to_tsv(df_train_for_each_location, path.join(collector.PROCESSED_DATA_BASEPATH, "train_amd_sfc_kwh.{l}.tsv".format(l=location)))
-        logger.info('#7: generate train data and save as a processed file in {l} !'.format(l=location))
+        collector.to_tsv(
+            df_train_for_each_location,
+            path.join(
+                collector.PROCESSED_DATA_BASEPATH,
+                "dataset_amd_sfc_kwh.{l}.tsv".format(l=location)
+            )
+        )
+        logger.info('#7: generate and save the dataset as a processed file in {l} !'.format(l=location))
 
 
 if __name__ == '__main__':
