@@ -4,7 +4,6 @@ from os import pardir, path, makedirs
 # Third-party modules
 import pandas as pd
 
-
 PROJECT_ROOT_PATH = path.join(path.dirname(__file__), pardir, pardir)
 RAW_DATA_BASEPATH = path.join(PROJECT_ROOT_PATH, "data/raw")
 INTERIM_DATA_BASEPATH = path.join(PROJECT_ROOT_PATH, "data/interim")
@@ -21,7 +20,7 @@ KWARGS_TO_CSV_BASE = {
 }
 
 LATLNGALT_UKISHIMA = (35.517558, 139.786920, 4.7)
-LATLNGALT_OUGIZIMA = (35.488680, 139.727451, 4.8)
+LATLNGALT_OUGISHIMA = (35.488680, 139.727451, 4.8)
 LATLNGALT_YONEKURAYAMA = (35.583302, 138.573118, 366.9)
 LABEL_LAT_HOUR, LABEL_LAT_MINUTE = "lat1", "lat2"
 LABEL_LNG_HOUR, LABEL_LNG_MINUTE = "lng1", "lng2"
@@ -73,7 +72,7 @@ class LocationHandlerBase(DataFrameHandlerBase):
     def __init__(self, master_filepath, **kwargs_location):
         super().__init__()
         self.LATLNGALT_UKISHIMA = LATLNGALT_UKISHIMA
-        self.LATLNGALT_OUGIZIMA = LATLNGALT_OUGIZIMA
+        self.LATLNGALT_OUGISHIMA = LATLNGALT_OUGISHIMA
         self.LATLNGALT_YONEKURAYAMA = LATLNGALT_YONEKURAYAMA
 
         self.location = pd.read_csv(
