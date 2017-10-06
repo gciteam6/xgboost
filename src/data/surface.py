@@ -1,3 +1,4 @@
+# Built-in modules
 from glob import glob
 # Third-party modules
 import pandas as pd
@@ -31,13 +32,13 @@ class SurfaceHandler(LocationHandlerBase):
     def to_tsv(self, df, path_or_buf, **kwargs):
         df.to_csv(path_or_buf, **self.gen_to_csv_kwargs(kwargs))
 
-    def gen_filepath_list(self, aid_list):
+    def gen_filepath_list(self, sid_list):
         sfc_regex_filepath_list = [
             self.path.join(
                 self.INTERIM_DATA_BASEPATH,
                 self.SFC_REGEX_DIRNAME,
-                self.sfc_file_prefix + str(aid) + self.sfc_file_suffix
-            ) for aid in aid_list
+                self.sfc_file_prefix + str(sid) + self.sfc_file_suffix
+            ) for sid in sid_list
         ]
 
         return [
@@ -46,7 +47,7 @@ class SurfaceHandler(LocationHandlerBase):
             for sfc_file in glob(sfc_regex_filepath)
         ]
 
-    def retrive_data(self, filepath_list, name_list):
+    def retrieve_data(self, filepath_list, name_list):
         if len(filepath_list) < 1:
             raise ValueError("Empty list ?")
 

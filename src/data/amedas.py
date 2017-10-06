@@ -1,3 +1,4 @@
+# Built-in modules
 from glob import glob
 # Third-party modules
 import pandas as pd
@@ -46,7 +47,7 @@ class AmedasHandler(LocationHandlerBase):
             for amd_file in glob(amd_regex_filepath)
         ]
 
-    def retrive_data(self, filepath_list, name_list):
+    def retrieve_data(self, filepath_list, name_list):
         if len(filepath_list) < 1:
             raise ValueError("Empty list ?")
 
