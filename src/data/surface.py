@@ -4,13 +4,12 @@ import pandas as pd
 # Hand-made modules
 from base import LocationHandlerBase
 
-SFC_REGEX_DIRNAME = "sfc[1-5]"
+SFC_REGEX_DIRNAME = "sfc[12]"
 KWARGS_READ_CSV_SFC_MASTER = {
     "index_col": 0,
 }
 KWARGS_READ_CSV_SFC_LOG = {
     "index_col": 0,
-    "na_values": ['', '　']
 }
 
 

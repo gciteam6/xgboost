@@ -10,7 +10,6 @@ KWARGS_READ_CSV_AMD_MASTER = {
 }
 KWARGS_READ_CSV_AMD_LOG = {
     "index_col": 0,
-    "na_values": ['', '　']
 }
 
 
