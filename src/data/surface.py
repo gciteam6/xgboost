@@ -47,21 +47,23 @@ class SurfaceHandler(LocationHandlerBase):
             for sfc_file in glob(sfc_regex_filepath)
         ]
 
-    def retrieve_data(self, filepath_list, name_list):
+    def retrieve_data(self, filepath_list, location_list):
         if len(filepath_list) < 1:
             raise ValueError("Empty list ?")
 
         df_ret = self.read_tsv(filepath_list[0])
-        df_ret.columns = [str(col_name) + '_' + name_list[0] for col_name in df_ret.columns]
+        df_ret.columns = [str(col_name) + '_' + location_list[0] for col_name in df_ret.columns]
 
         if len(filepath_list) > 1:
-            for filepath, name in zip(filepath_list[1:], name_list[1:]):
+            for filepath, location in zip(filepath_list[1:], location_list[1:]):
+                df_temp = self.read_tsv(filepath_list[0])
+                df_temp.columns = [str(col_name) + '_' + location for col_name in df_temp.columns]
+
                 df_ret = df_ret.merge(
-                    self.read_tsv(filepath),
+                    df_temp,
                     how="outer",
                     left_index=True,
                     right_index=True,
-                    suffixes=(".", "_{}".format(name))
                 )
 
         return df_ret
