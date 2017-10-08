@@ -9,6 +9,7 @@ cookiecutter
 numpy
 scipy
 pandas
+bloscpack
 scikit-learn
 scikit-image
 matplotlib

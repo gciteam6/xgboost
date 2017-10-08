@@ -1,6 +1,7 @@
 # Built-in modules
 from copy import deepcopy
 from os import pardir, path, makedirs
+import datetime
 # Third-party modules
 import pandas as pd
 
@@ -10,6 +11,14 @@ INTERIM_DATA_BASEPATH = path.join(PROJECT_ROOT_PATH, "data/interim")
 PROCESSED_DATA_BASEPATH = path.join(PROJECT_ROOT_PATH, "data/processed")
 
 DATETIME_FORMAT = "(?P<year>\d{4})(?P<month>\d{1,2})(?P<day>\d{1,2})(?P<hour>\d{2})(?P<minute>\d{2})"
+TRAIN_DATE_RANGE = (
+    pd.to_datetime("2012-01-01 00:10:00"),
+    pd.to_datetime("2016-01-01 00:00:00")
+)
+TEST_DATE_RANGE = (
+    pd.to_datetime("2016-01-01 00:10:00"),
+    pd.to_datetime("2017-04-01 00:00:00")
+)
 KWARGS_READ_CSV_BASE = {
     "sep": "\t",
     "header": 0,
@@ -46,9 +55,11 @@ class PathHandlerBase(object):
 class DataFrameHandlerBase(PathHandlerBase):
     def __init__(self):
         super().__init__()
+        self.DATETIME_FORMAT = DATETIME_FORMAT
+        self.TRAIN_DATE_RANGE = TRAIN_DATE_RANGE
+        self.TEST_DATE_RANGE = TEST_DATE_RANGE
         self.KWARGS_READ_CSV_BASE = KWARGS_READ_CSV_BASE
         self.KWARGS_TO_CSV_BASE = KWARGS_TO_CSV_BASE
-        self.DATETIME_FORMAT = DATETIME_FORMAT
 
     def gen_read_csv_kwargs(self, kwargs_to_add: dict):
         ret_dict = deepcopy(self.KWARGS_READ_CSV_BASE)
@@ -66,6 +77,15 @@ class DataFrameHandlerBase(PathHandlerBase):
 
     def parse_datetime(self, df):
         return pd.to_datetime(df.str.extract(self.DATETIME_FORMAT, expand=False))
+
+    @staticmethod
+    def gen_datetime_index(start, end, freq_min: int = 10):
+        return pd.date_range(start, end, freq=pd.offsets.Minute(freq_min))
+
+    @staticmethod
+    def gen_norm_datetime(year, month, day, hour, minute, second):
+        return datetime.datetime(year, month, day) + \
+               datetime.timedelta(hours=hour, minutes=minute, seconds=second)
 
 
 class LocationHandlerBase(DataFrameHandlerBase):
