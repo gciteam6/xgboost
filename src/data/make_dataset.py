@@ -8,6 +8,7 @@ from dotenv import find_dotenv, load_dotenv
 from unzip import Unzipper
 from amedas import AmedasHandler
 from surface import SurfaceHandler
+from forecast import ForecastHandler
 from sola import SolarPhotovoltaicHandler
 from concatenation import DatasetCollector
 
@@ -16,7 +17,7 @@ AMD_MASTER_FILENAME = "amd_master.tsv"
 SFC_MASTER_FILENAME = "sfc_master.tsv"
 TRAIN_KWH_FILENAME = "train_kwh.tsv"
 OBJECTIVE_COLUMN_NAME = "kwh"
-LOCATION = [
+LOCATIONS = [
     "ukishima",
     "ougishima",
     "yonekurayama"
@@ -46,6 +47,9 @@ def main(input_dirpath,
         for unzip_filepath in unzipper.gen_unzip_filepath_list(input_dirpath):
             unzipper.unzip(unzip_filepath, unzipper.INTERIM_DATA_BASEPATH)
             logger.info('#1: unzipped {f} !'.format(f=path.basename(unzip_filepath)))
+
+        logger.info('#1: end unzip !')
+        del unzipper
     else:
         logger.info('#1: skipped unzipping !')
 
@@ -63,15 +67,26 @@ def main(input_dirpath,
     amd_point_near_yonekurayama = amd.get_near_observation_points(
         amd.LATLNGALT_YONEKURAYAMA[0], amd.LATLNGALT_YONEKURAYAMA[1], amd_half_mashgrid_size
     )
+
     logger.info('#2: get amedas observation points !')
 
     for amd_point, location in zip(
             [amd_point_near_ukishima, amd_point_near_ougishima, amd_point_near_yonekurayama],
-            LOCATION):
+            LOCATIONS):
         amd_filepath = amd.gen_filepath_list(amd_point.index)
         df_amd = amd.retrieve_data(amd_filepath, amd_point["name"].as_matrix())
         amd.to_tsv(df_amd, path.join(amd.INTERIM_DATA_BASEPATH, "amd_data_near.{l}.tsv".format(l=location)))
-        logger.info('#3: gather amedas data and save as a middle file in {l} !'.format(l=location))
+
+        logger.info('#2: gather amedas data and save as a middle file in {l} !'.format(l=location))
+        del df_amd
+
+    logger.info('#2: end amedas data processing !')
+    del (
+        amd,
+        amd_point_near_ukishima,
+        amd_point_near_ougishima,
+        amd_point_near_yonekurayama
+    )
 
     #
     # surface weather information
@@ -87,15 +102,80 @@ def main(input_dirpath,
     sfc_point_near_yonekurayama = sfc.get_near_observation_points(
         sfc.LATLNGALT_YONEKURAYAMA[0], sfc.LATLNGALT_YONEKURAYAMA[1], scf_half_mashgrid_size
     )
-    logger.info('#4: get surface weather observation points !')
+
+    logger.info('#3: get surface weather observation points !')
 
     for sfc_point, location in zip(
             [sfc_point_near_ukishima, sfc_point_near_ougishima, sfc_point_near_yonekurayama],
-            LOCATION):
+            LOCATIONS):
         sfc_filepath = sfc.gen_filepath_list(sfc_point.index)
         df_sfc = sfc.retrieve_data(sfc_filepath, sfc_point["name"].as_matrix())
         sfc.to_tsv(df_sfc, path.join(sfc.INTERIM_DATA_BASEPATH, "sfc_data_near.{l}.tsv".format(l=location)))
-        logger.info('#5: gather surface weather data and save as a middle file in {l} !'.format(l=location))
+
+        logger.info('#3: gather surface weather data and save as a middle file in {l} !'.format(l=location))
+        del df_sfc
+
+    logger.info('#3: end surface weather data processing !')
+    del (
+        sfc,
+        sfc_point_near_ukishima,
+        sfc_point_near_ougishima,
+        sfc_point_near_yonekurayama
+    )
+
+    #
+    # forecast information
+    #
+    forecast = ForecastHandler()
+
+    for location in LOCATIONS:
+        forecast_filepath = forecast.gen_filepath(location)
+        df_forecast = forecast.read_tsv(forecast_filepath)
+        df_forecast_expanded = forecast.add_datetime_ticks(df_forecast)
+
+        whole_day_data_name_list = \
+            forecast.get_whole_day_data_columns(df_forecast.columns)
+
+        for whole_day_data_name in whole_day_data_name_list:
+            sr_expand_whole_day_data = \
+                forecast.expand_whole_day_data(df_forecast[whole_day_data_name])
+            df_forecast_expanded.loc[
+                sr_expand_whole_day_data.index, whole_day_data_name
+            ] = sr_expand_whole_day_data
+
+            logger.info('#4: expand "{n}" in forecast'.format(n=whole_day_data_name))
+            del sr_expand_whole_day_data
+
+        time_ranged_data_name_list = \
+            forecast.get_time_ranged_data_columns(df_forecast.columns)
+
+        for time_ranged_data_name in time_ranged_data_name_list:
+            sr_expand_time_ranged_data = \
+                forecast.expand_time_ranged_data(df_forecast[time_ranged_data_name])
+            df_forecast_expanded.loc[
+                sr_expand_time_ranged_data.index,
+                forecast.extract_attribute_from_time_ranged_column_name(time_ranged_data_name)
+            ] = sr_expand_time_ranged_data
+
+            logger.info('#4: expand "{n}" in {l}'.format(n=time_ranged_data_name, l=location))
+            del sr_expand_time_ranged_data
+
+        df_forecast_expanded.drop(time_ranged_data_name_list, axis=1, inplace=True)
+        forecast.to_tsv(
+            df_forecast_expanded,
+            path.join(forecast.INTERIM_DATA_BASEPATH, "forecast_data.{l}.tsv".format(l=location))
+        )
+
+        logger.info('#4: gather forecast data and save as a middle file in {l} !'.format(l=location))
+        del (
+            df_forecast,
+            df_forecast_expanded,
+            whole_day_data_name_list,
+            time_ranged_data_name_list
+        )
+
+    logger.info('#4: end forecast data processing !')
+    del forecast
 
     #
     # train_kwh information
@@ -105,18 +185,22 @@ def main(input_dirpath,
 
     for col_label, location in zip(
             [sola.LABEL_SOLA_UKISHIMA, sola.LABEL_SOLA_OUGISHIMA, sola.LABEL_SOLA_YONEKURAYAMA],
-            LOCATION):
+            LOCATIONS):
         df_sola = df_train_kwh.loc[:, col_label].to_frame(name=OBJECTIVE_COLUMN_NAME)
         sola.to_tsv(df_sola, path.join(sola.INTERIM_DATA_BASEPATH, "sola_data.{l}.tsv".format(l=location)))
 
-    logger.info('#6: get solar data and save as a middle file !')
+        logger.info('#5: get solar data and save as a middle file in {l}!'.format(l=location))
+        del df_sola
+
+    logger.info('#5: end solar data processing !')
+    del (sola, df_train_kwh)
 
     #
-    # train_kwh information
+    # gether data
     #
     collector = DatasetCollector()
 
-    for location in LOCATION:
+    for location in LOCATIONS:
         location_filepath = collector.gen_filepath_list(location)
         df_train_for_each_location = collector.retrieve_data(location_filepath)
         collector.to_tsv(
@@ -126,7 +210,8 @@ def main(input_dirpath,
                 "dataset_amd_sfc_kwh.{l}.tsv".format(l=location)
             )
         )
-        logger.info('#7: generate and save the dataset as a processed file in {l} !'.format(l=location))
+        logger.info('#6: generate and save the dataset as a processed file in {l} !'.format(l=location))
+        del df_train_for_each_location
 
 
 if __name__ == '__main__':
