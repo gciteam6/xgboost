@@ -1,7 +1,9 @@
 sudo yum update -y
 sudo yum install -y \
     git \
+    cmake \
     gcc \
+    gcc-c++ \
     zlib-devel \
     bzip2 \
     bzip2-devel \
@@ -22,5 +24,5 @@ source ~/.bashrc
 
 pyenv install -s 3.6.2  \
     && pyenv global 3.6.2 \
-    && pip install --upgrade pip python-dateutil \
+    && pip install --upgrade pip setuptools python-dateutil \
     && pip --no-cache-dir install -r requirements.txt
