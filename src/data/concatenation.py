@@ -5,7 +5,7 @@ import pandas as pd
 # Hand-made modules
 from base import DataFrameHandlerBase
 
-REGEX_FILE_EXTENSION = ".tsv"
+REGEX_FILE_EXTENSION = "tsv"
 KWARGS_READ_CSV_INTERIM_FILE = {
     "index_col": 0
 }
@@ -25,7 +25,7 @@ class DatasetCollector(DataFrameHandlerBase):
     def gen_filepath_list(self, location_name):
         regex_filepath = self.path.join(
             self.INTERIM_DATA_BASEPATH,
-            "*.{l}".format(l=location_name) + self.REGEX_FILE_EXTENSION
+            "*.{l}.{e}".format(l=location_name, e=self.REGEX_FILE_EXTENSION)
         )
 
         return glob(regex_filepath)

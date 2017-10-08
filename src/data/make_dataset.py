@@ -207,9 +207,10 @@ def main(input_dirpath,
             df_train_for_each_location,
             path.join(
                 collector.PROCESSED_DATA_BASEPATH,
-                "dataset_amd_sfc_kwh.{l}.tsv".format(l=location)
+                "dataset.amd_sfc_forecast_kwh.{l}.tsv".format(l=location)
             )
         )
+
         logger.info('#6: generate and save the dataset as a processed file in {l} !'.format(l=location))
         del df_train_for_each_location
 
