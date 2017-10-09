@@ -2,7 +2,7 @@
 from glob import glob
 from zipfile import ZipFile
 # Hand-made modules
-from base import PathHandlerBase
+from .base import PathHandlerBase
 
 
 class Unzipper(PathHandlerBase):

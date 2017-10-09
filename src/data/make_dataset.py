@@ -1,17 +1,22 @@
 # Built-in modules
 from os import path, pardir
+import sys
 import logging
+
+# not used in this stub but often useful for finding various files
+PROJECT_ROOT_DIRPATH = path.join(path.dirname(__file__), pardir, pardir)
+sys.path.append(PROJECT_ROOT_DIRPATH)
+
 # third party modules
 import click
 from dotenv import find_dotenv, load_dotenv
 # Hand-made modules
-from unzip import Unzipper
-from amedas import AmedasHandler
-from surface import SurfaceHandler
-from forecast import ForecastHandler
-from sola import SolarPhotovoltaicHandler
-from concatenation import DatasetCollector
-
+from src.data.unzip import Unzipper
+from src.data.amedas import AmedasHandler
+from src.data.surface import SurfaceHandler
+from src.data.forecast import ForecastHandler
+from src.data.sola import SolarPhotovoltaicHandler
+from src.data.concatenation import DatasetCollector
 
 AMD_MASTER_FILENAME = "amd_master.tsv"
 SFC_MASTER_FILENAME = "sfc_master.tsv"
@@ -218,9 +223,6 @@ def main(input_dirpath,
 if __name__ == '__main__':
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_fmt)
-
-    # not used in this stub but often useful for finding various files
-    project_dir = path.join(path.dirname(__file__), pardir, pardir)
 
     # find .env automagically by walking up directories until it's found, then
     # load up the .env entries as environment variables

@@ -3,7 +3,7 @@ from glob import glob
 # Third-party modules
 import pandas as pd
 # Hand-made modules
-from base import DataFrameHandlerBase
+from .base import DataFrameHandlerBase
 
 REGEX_FILE_EXTENSION = "tsv"
 KWARGS_READ_CSV_INTERIM_FILE = {

@@ -3,7 +3,7 @@ from glob import glob
 # Third-party modules
 import pandas as pd
 # Hand-made modules
-from base import LocationHandlerBase
+from .base import LocationHandlerBase
 
 AMD_REGEX_DIRNAME = "amd[1-5]"
 KWARGS_READ_CSV_AMD_MASTER = {

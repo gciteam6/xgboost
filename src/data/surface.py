@@ -3,7 +3,7 @@ from glob import glob
 # Third-party modules
 import pandas as pd
 # Hand-made modules
-from base import LocationHandlerBase
+from .base import LocationHandlerBase
 
 SFC_REGEX_DIRNAME = "sfc[12]"
 KWARGS_READ_CSV_SFC_MASTER = {

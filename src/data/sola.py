@@ -1,7 +1,7 @@
 # Third-party modules
 import pandas as pd
 # Hand-made modules
-from base import DataFrameHandlerBase
+from .base import DataFrameHandlerBase
 
 KWARGS_READ_CSV_SOLA = {
     "index_col": 0,
