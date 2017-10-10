@@ -7,26 +7,6 @@ from .base import DataFrameHandlerBase, BloscpackMixin
 
 OBJECTIVE_COLUMNS = ["kwh", ]
 REGEX_FLAG_NAME_PREFIX = "f_"
-REGEX_DROP_LABEL_NAME_PREFIXES = {
-    "max_ws_",
-    "ave_wv_",
-    "ave_ws_",
-    "max_tp_",
-    "min_tp_",
-    "sl_",
-    "sd_",
-    "vb_",
-    "weather_",
-    "dsr_",
-    "dsd_",
-    "dsr_"
-}
-DROP_LABEL_NAMES = [
-    "weather",
-    "weather_detail",
-    "wind",
-    "wave"
-]
 
 
 class DatasetHandler(DataFrameHandlerBase, BloscpackMixin):
@@ -34,8 +14,6 @@ class DatasetHandler(DataFrameHandlerBase, BloscpackMixin):
         super().__init__()
         self.OBJECTIVE_COLUMNS = OBJECTIVE_COLUMNS
         self.REGEX_FLAG_NAME_PREFIX = REGEX_FLAG_NAME_PREFIX
-        self.REGEX_DROP_LABEL_NAME_PREFIXES = REGEX_DROP_LABEL_NAME_PREFIXES
-        self.DROP_LABEL_NAMES = DROP_LABEL_NAMES
 
     def separate_train_test(self, df: pd.DataFrame):
         df_train = df.loc[self.TRAIN_DATE_RANGE[0]:self.TRAIN_DATE_RANGE[1], :]
