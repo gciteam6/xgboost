@@ -10,9 +10,11 @@ sys.path.append(PROJECT_ROOT_DIRPATH)
 # Third-party modules
 import click
 from dotenv import find_dotenv, load_dotenv
+from pandas import offsets
 # Hand-made modules
 from src.features.dataset import DatasetHandler
 from src.features.dummy import DummyFeatureHandler
+from src.features.time_series import TimeSeriesReshaper
 
 FILE_EXTENTION = "tsv"
 LOCATIONS = [
@@ -20,6 +22,10 @@ LOCATIONS = [
     "ougishima",
     "yonekurayama"
 ]
+CIRCULAR_CATEGORICAL_VARIABLES = [
+    "wv"
+]
+SHIFT_INDEX_OFFSETS_HOUR = -28
 
 
 @click.command()
@@ -27,13 +33,12 @@ def main():
     logger = logging.getLogger(__name__)
     logger.info('#0: building features (explanatory values) from data')
 
+    maker = DatasetHandler()
     # TODO: 中間ファイルのI/O高速化(bloscpack使用)
 
     #
     # get samples from the serialized datasets
     #
-    maker = DatasetHandler()
-
     for location in LOCATIONS:
         dataset_filepath = path.join(
             maker.PROCESSED_DATA_BASEPATH,
@@ -61,7 +66,6 @@ def main():
         del (df_data_flags, df_data, df_flags)
 
     logger.info('#1: end data-flags separations !')
-    del maker
 
     #
     # convert categorical to dummy
@@ -70,10 +74,10 @@ def main():
 
     for location in LOCATIONS:
         dataset_filepath = path.join(
-            categ.INTERIM_DATA_BASEPATH,
+            maker.INTERIM_DATA_BASEPATH,
             "dataset.data.{l}.#1".format(l=location)
         )
-        df_data = categ.read_tsv(dataset_filepath)
+        df_data = maker.read_tsv(dataset_filepath)
 
         logger.info('#2: read tsv file of {l} !'.format(l=location))
 
@@ -92,8 +96,7 @@ def main():
             df_hour_cos_sin, how="outer", left_index=True, right_index=True
         )
 
-        for col_name in ["wv", ]:
-            # TODO: dummy変数生成部分のハードコードの除去
+        for col_name in CIRCULAR_CATEGORICAL_VARIABLES:
             df_temp_cos_sin = categ.convert_linear_to_circular(
                 df_data[col_name], len(categ.FORECAST_ATTRIBUTES[col_name])
             )
@@ -102,9 +105,9 @@ def main():
             )
             df_data.drop(col_name, axis=1, inplace=True)
 
-        categ.to_tsv(
+        maker.to_tsv(
             df_data, path.join(
-                categ.INTERIM_DATA_BASEPATH,
+                maker.INTERIM_DATA_BASEPATH,
                 "dataset.data.{l}.#2".format(l=location)
             )
         )
@@ -122,7 +125,7 @@ def main():
     #
     # nan processings (prune verbose features and fill nan)
     #
-    maker = DatasetHandler()
+    reshaper = TimeSeriesReshaper()
 
     for location in LOCATIONS:
         dataset_filepath = path.join(
@@ -133,15 +136,21 @@ def main():
 
         logger.info('#3: read tsv file of {l} !'.format(l=location))
 
-        drop_col_name_list = maker.get_regex_matched_col_name(
-            df_data.columns, maker.REGEX_DROP_LABEL_NAME_PREFIXES
+        drop_col_name_list = reshaper.get_regex_matched_col_name(
+            df_data.columns, reshaper.REGEX_DROP_LABEL_NAME_PREFIXES
         )
-        drop_col_name_list.extend(maker.DROP_LABEL_NAMES)
-
+        drop_col_name_list.extend(reshaper.DROP_LABEL_NAMES)
         df_X, df_y = maker.separate_X_y(df_data)
         df_X.drop(drop_col_name_list, axis=1, inplace=True)
-        df_X.fillna(method="bfill", inplace=True)
 
+        shift_col_name_list = reshaper.get_regex_matched_col_name(
+            df_X.columns, reshaper.REGEX_SHIFT_COL_NAME_PREFIXES
+        )
+        df_X = reshaper.shift_indexes(
+            df_X, offsets.Hour(SHIFT_INDEX_OFFSETS_HOUR), shift_col_name_list
+        )
+
+        df_X.fillna(method="bfill", inplace=True)
         # TODO: より細かなfillna処理の実装(連続値のinterpolateによる補完, kwhの部分欠損値の補完)
 
         logger.info('#3: remove verbose features & fill nan in {l} !'.format(l=location))
@@ -171,16 +180,19 @@ def main():
         )
 
         logger.info('#3: save train/test dataset as each files in {l} !'.format(l=location))
-        del (df_data, df_train, X_train, X_test, y_train)
+        del (
+            df_data, df_train, df_X, df_y,
+            X_train, X_test,
+            y_train,
+            drop_col_name_list, shift_col_name_list
+        )
 
     logger.info('#3: end nan processings !')
-    del maker
+    del reshaper
 
     #
     # resample to every 30 min
     #
-    maker = DatasetHandler()
-
     for location in LOCATIONS:
         train_dataset_filepath = path.join(
             maker.INTERIM_DATA_BASEPATH,
@@ -221,7 +233,6 @@ def main():
         ).mean()
 
         # TODO: 20 ~ 40 minから40 min, 30 ~ 50 minから50 minのsample生成
-        # TODO: 一昨日20:10:00~昨日20:00:00のamd, sfcと当日のforecastと月, 時刻を組み合わせるコードの作成
 
         logger.info('#4: convert sample frequency 10 min to 30 min of the test section in {l} !'.format(l=location))
 
