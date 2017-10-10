@@ -84,7 +84,7 @@ class DataFrameHandlerBase(PathHandlerBase):
 class BloscpackMixin:
     @staticmethod
     def read_blp(serialized_filepath):
-        bp.unpack_ndarray_file(serialized_filepath)
+        return bp.unpack_ndarray_file(serialized_filepath)
 
     @staticmethod
     def to_blp(ndarray: np.array, serialized_filepath):
@@ -96,7 +96,7 @@ class BloscpackMixin:
             f.write("\t".join(string_list))
 
 
-class CategoricalHandlerBase(DataFrameHandlerBase):
+class CategoricalHandlerBase(PathHandlerBase):
     def __init__(self):
         super().__init__()
         self.MONTH_LABEL_NAME = MONTH_LABEL_NAME
