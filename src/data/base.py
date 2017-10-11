@@ -47,7 +47,6 @@ class PathHandlerBase(object):
         self.RAW_DATA_BASEPATH = RAW_DATA_BASEPATH
         self.INTERIM_DATA_BASEPATH = INTERIM_DATA_BASEPATH
         self.PROCESSED_DATA_BASEPATH = PROCESSED_DATA_BASEPATH
-        self.KWARGS_MERGE_TWO_DATAFRAME = KWARGS_MERGE_TWO_DATAFRAME
         self.path = path
 
     @staticmethod
@@ -66,6 +65,7 @@ class DataFrameHandlerBase(PathHandlerBase):
         self.TEST_DATE_RANGE = TEST_DATE_RANGE
         self.KWARGS_READ_CSV_BASE = KWARGS_READ_CSV_BASE
         self.KWARGS_TO_CSV_BASE = KWARGS_TO_CSV_BASE
+        self.KWARGS_MERGE_TWO_DATAFRAME = KWARGS_MERGE_TWO_DATAFRAME
 
     def gen_read_csv_kwargs(self, kwargs_to_add: dict):
         ret_dict = deepcopy(self.KWARGS_READ_CSV_BASE)
