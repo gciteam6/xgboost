@@ -42,7 +42,7 @@ LATLNG_BASE_COORDINATES = [
 @click.command()
 @click.argument("input_dirpath", type=click.Path(exists=True))
 @click.option("--amd_half_mashgrid_size", "-a", type=float, default=0.2)
-@click.option("--scf_half_mashgrid_size", "-s", type=float, default=0.4)
+@click.option("--sfc_half_mashgrid_size", "-s", type=float, default=0.4)
 @click.option("--is_unzip", "-z", type=bool, default=True)
 def main(input_dirpath,
          amd_half_mashgrid_size,
