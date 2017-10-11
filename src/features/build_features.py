@@ -49,7 +49,6 @@ def main():
     logger.info('#0: building features (explanatory values) from data')
 
     maker = DatasetHandler(columns_y=OBJECTIVE_LABEL_NAMES)
-    # TODO: 中間ファイルのI/O高速化(bloscpack使用)
 
     #
     # get samples from the serialized datasets
@@ -59,22 +58,20 @@ def main():
             maker.PROCESSED_DATA_BASEPATH,
             "dataset.amd_sfc_forecast_kwh.{l}.{e}".format(l=location, e=FILE_EXTENTION)
         )
-        df_data_flags = maker.read_tsv(dataset_filepath)
+        df_data_flags = maker.read_tsv(dataset_filepath).iloc[:50000, :]
         df_data, df_flags = maker.split_data_and_flags(df_data_flags)
 
         # TODO: amd, sfc利用フラグの扱いに関する処理の実装
 
-        maker.to_tsv(
-            df_data, path.join(
-                maker.INTERIM_DATA_BASEPATH,
-                "dataset.data.{l}.#1".format(l=location)
-            )
+        maker.to_blp_via_df(
+            df_data,
+            path.join(maker.INTERIM_DATA_BASEPATH, "dataset.data"),
+            "{l}.#1".format(l=location)
         )
-        maker.to_tsv(
-            df_flags, path.join(
-                maker.INTERIM_DATA_BASEPATH,
-                "dataset.flags.{l}.#1".format(l=location)
-            )
+        maker.to_blp_via_df(
+            df_flags,
+            path.join(maker.INTERIM_DATA_BASEPATH, "dataset.flags"),
+            "{l}.#1".format(l=location)
         )
 
         logger.info('#1: save data & flags as each files of {l} !'.format(l=location))
@@ -88,11 +85,10 @@ def main():
     categ = DummyFeatureHandler()
 
     for location in LOCATIONS:
-        dataset_filepath = path.join(
-            maker.INTERIM_DATA_BASEPATH,
-            "dataset.data.{l}.#1".format(l=location)
+        df_data = maker.read_blp_as_df(
+            path.join(maker.INTERIM_DATA_BASEPATH, "dataset.data"),
+            "{l}.#1".format(l=location)
         )
-        df_data = maker.read_tsv(dataset_filepath)
 
         logger.info('#2: read tsv file of {l} !'.format(l=location))
 
@@ -114,11 +110,10 @@ def main():
             df_data = df_data.merge(df_temp_cos_sin, **maker.KWARGS_OUTER_MERGE)
             df_data.drop(col_name, axis=1, inplace=True)
 
-        maker.to_tsv(
-            df_data, path.join(
-                maker.INTERIM_DATA_BASEPATH,
-                "dataset.data.{l}.#2".format(l=location)
-            )
+        maker.to_blp_via_df(
+            df_data,
+            path.join(maker.INTERIM_DATA_BASEPATH, "dataset.data"),
+            "{l}.#2".format(l=location)
         )
 
         logger.info('#2: covert categorical features to dummy ones & save as a file in {l} !'.format(l=location))
@@ -137,11 +132,10 @@ def main():
     reshaper = TimeSeriesReshaper()
 
     for location, drop_index_list in zip(LOCATIONS, DROP_DATETIME_RANGE_LOCATIONS):
-        dataset_filepath = path.join(
-            maker.INTERIM_DATA_BASEPATH,
-            "dataset.data.{l}.#2".format(l=location)
+        df_data = maker.read_blp_as_df(
+            path.join(maker.INTERIM_DATA_BASEPATH, "dataset.data"),
+            "{l}.#2".format(l=location)
         )
-        df_data = maker.read_tsv(dataset_filepath)
 
         logger.info('#3: read tsv file of {l} !'.format(l=location))
 
@@ -169,22 +163,22 @@ def main():
             if len(drop_index) == 0:
                 break
 
+            print(reshaper.gen_datetime_index(drop_index[0], drop_index[1]))
+            print(df_train)
             df_train.drop(
                 reshaper.gen_datetime_index(drop_index[0], drop_index[1]),
                 axis=0, inplace=True
             )
 
-        maker.to_tsv(
-            df_train, path.join(
-                maker.INTERIM_DATA_BASEPATH,
-                "dataset.train.{l}.#3".format(l=location)
-            )
+        maker.to_blp_via_df(
+            df_data,
+            path.join(maker.INTERIM_DATA_BASEPATH, "dataset.train"),
+            "{l}.#3".format(l=location)
         )
-        maker.to_tsv(
-            X_test, path.join(
-                maker.INTERIM_DATA_BASEPATH,
-                "dataset.test.{l}.#3".format(l=location)
-            )
+        maker.to_blp_via_df(
+            df_data,
+            path.join(maker.INTERIM_DATA_BASEPATH, "dataset.test"),
+            "{l}.#3".format(l=location)
         )
 
         logger.info('#3: save train/test dataset as each files in {l} !'.format(l=location))
@@ -202,11 +196,10 @@ def main():
     # resample to every 30 min
     #
     for location in LOCATIONS:
-        train_dataset_filepath = path.join(
-            maker.INTERIM_DATA_BASEPATH,
-            "dataset.train.{l}.#3".format(l=location)
+        df_train_every_10 = maker.read_blp_as_df(
+            path.join(maker.INTERIM_DATA_BASEPATH, "dataset.train"),
+            "{l}.#3".format(l=location)
         )
-        df_train_every_10 = maker.read_tsv(train_dataset_filepath)
 
         logger.info('#4: read tsv file of the train section in {l} !'.format(l=location))
 
@@ -223,11 +216,10 @@ def main():
 
         logger.info('#4: convert sample frequency 10 min to 30 min of the train section in {l} !'.format(l=location))
 
-        test_dataset_filepath = path.join(
-            maker.INTERIM_DATA_BASEPATH,
-            "dataset.test.{l}.#3".format(l=location)
+        X_test = maker.read_blp_as_df(
+            path.join(maker.INTERIM_DATA_BASEPATH, "dataset.test"),
+            "{l}.#3".format(l=location)
         )
-        X_test = maker.read_tsv(test_dataset_filepath)
 
         logger.info('#4: read tsv file of the test section in {l} !'.format(l=location))
 
@@ -239,23 +231,15 @@ def main():
 
         logger.info('#4: convert sample frequency 10 min to 30 min of the test section in {l} !'.format(l=location))
 
-        maker.to_blp(
-            df_train_every_30.values, path.join(
-                maker.PROCESSED_DATA_BASEPATH,
-                "dataset.train_X_y.{l}.blp".format(l=location)
-            )
+        maker.to_blp_via_df(
+            df_train_every_30,
+            path.join(maker.PROCESSED_DATA_BASEPATH, "dataset.train_X_y"),
+            "{l}.#4".format(l=location)
         )
-        maker.to_blp(
-            X_test.values, path.join(
-                maker.PROCESSED_DATA_BASEPATH,
-                "dataset.test_X.{l}.blp".format(l=location)
-            )
-        )
-        maker.to_txt(
-            X_test.columns, path.join(
-                maker.PROCESSED_DATA_BASEPATH,
-                "dataset.features.{l}.txt".format(l=location)
-            )
+        maker.to_blp_via_df(
+            X_test,
+            path.join(maker.PROCESSED_DATA_BASEPATH, "dataset.test_X"),
+            "{l}.#4".format(l=location)
         )
 
         logger.info('#4: save train/test dataset as each files in {l} !'.format(l=location))
