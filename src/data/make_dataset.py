@@ -46,7 +46,7 @@ LATLNG_BASE_COORDINATES = [
 @click.option("--is_unzip", "-z", type=bool, default=True)
 def main(input_dirpath,
          amd_half_mashgrid_size,
-         scf_half_mashgrid_size,
+         sfc_half_mashgrid_size,
          is_unzip):
     """ Runs data processing scripts to turn raw data from (../raw) into
         cleaned data ready to be analyzed (saved in ../processed).
@@ -97,7 +97,7 @@ def main(input_dirpath,
 
     for location, latlng_base_coordinate in zip(LOCATIONS, LATLNG_BASE_COORDINATES):
         retrieve_sfc_point = sfc.get_near_observation_points(
-            latlng_base_coordinate[0], latlng_base_coordinate[1], scf_half_mashgrid_size
+            latlng_base_coordinate[0], latlng_base_coordinate[1], sfc_half_mashgrid_size
         )
 
         logger.info('#3: get surface weather observation points in {l} !'.format(l=location))
