@@ -32,6 +32,11 @@ LOCATIONS = [
     "ougishima",
     "yonekurayama"
 ]
+LATLNG_BASE_COORDINATES = [
+    LATLNGALT_UKISHIMA,
+    LATLNGALT_OUGISHIMA,
+    LATLNGALT_YONEKURAYAMA
+]
 
 
 @click.command()
@@ -68,70 +73,44 @@ def main(input_dirpath,
     #
     amd = AmedasHandler(path.join(input_dirpath, AMD_MASTER_FILENAME))
 
-    amd_point_near_ukishima = amd.get_near_observation_points(
-        LATLNGALT_UKISHIMA[0], LATLNGALT_UKISHIMA[1], amd_half_mashgrid_size
-    )
-    amd_point_near_ougishima = amd.get_near_observation_points(
-        LATLNGALT_OUGISHIMA[0], LATLNGALT_OUGISHIMA[1], amd_half_mashgrid_size
-    )
-    amd_point_near_yonekurayama = amd.get_near_observation_points(
-        LATLNGALT_YONEKURAYAMA[0], LATLNGALT_YONEKURAYAMA[1], amd_half_mashgrid_size
-    )
+    for location, latlng_base_coordinate in zip(LOCATIONS, LATLNG_BASE_COORDINATES):
+        retrieve_amd_point = amd.get_near_observation_points(
+            latlng_base_coordinate[0], latlng_base_coordinate[1], amd_half_mashgrid_size
+        )
 
-    logger.info('#2: get amedas observation points !')
+        logger.info('#2: get amedas observation points in {l} !'.format(l=location))
 
-    for amd_point, location in zip(
-            [amd_point_near_ukishima, amd_point_near_ougishima, amd_point_near_yonekurayama],
-            LOCATIONS):
-        amd_filepath = amd.gen_filepath_list(amd_point.index)
-        df_amd = amd.retrieve_data(amd_filepath, amd_point["name"].as_matrix())
+        amd_filepath = amd.gen_filepath_list(retrieve_amd_point.index)
+        df_amd = amd.retrieve_data(amd_filepath, retrieve_amd_point["name"].as_matrix())
         amd.to_tsv(df_amd, path.join(amd.INTERIM_DATA_BASEPATH, "amd_data_near.{l}.tsv".format(l=location)))
 
         logger.info('#2: gather amedas data and save as a middle file in {l} !'.format(l=location))
-        del df_amd
+        del (df_amd, retrieve_amd_point)
 
     logger.info('#2: end amedas data processing !')
-    del (
-        amd,
-        amd_point_near_ukishima,
-        amd_point_near_ougishima,
-        amd_point_near_yonekurayama
-    )
+    del amd
 
     #
     # surface weather information
     #
     sfc = SurfaceHandler(path.join(input_dirpath, SFC_MASTER_FILENAME))
 
-    sfc_point_near_ukishima = sfc.get_near_observation_points(
-        LATLNGALT_UKISHIMA[0], LATLNGALT_UKISHIMA[1], scf_half_mashgrid_size
-    )
-    sfc_point_near_ougishima = sfc.get_near_observation_points(
-        LATLNGALT_OUGISHIMA[0], LATLNGALT_OUGISHIMA[1], scf_half_mashgrid_size
-    )
-    sfc_point_near_yonekurayama = sfc.get_near_observation_points(
-        LATLNGALT_YONEKURAYAMA[0], LATLNGALT_YONEKURAYAMA[1], scf_half_mashgrid_size
-    )
+    for location, latlng_base_coordinate in zip(LOCATIONS, LATLNG_BASE_COORDINATES):
+        retrieve_sfc_point = sfc.get_near_observation_points(
+            latlng_base_coordinate[0], latlng_base_coordinate[1], scf_half_mashgrid_size
+        )
 
-    logger.info('#3: get surface weather observation points !')
+        logger.info('#3: get surface weather observation points in {l} !'.format(l=location))
 
-    for sfc_point, location in zip(
-            [sfc_point_near_ukishima, sfc_point_near_ougishima, sfc_point_near_yonekurayama],
-            LOCATIONS):
-        sfc_filepath = sfc.gen_filepath_list(sfc_point.index)
-        df_sfc = sfc.retrieve_data(sfc_filepath, sfc_point["name"].as_matrix())
+        sfc_filepath = sfc.gen_filepath_list(retrieve_sfc_point.index)
+        df_sfc = sfc.retrieve_data(sfc_filepath, retrieve_sfc_point["name"].as_matrix())
         sfc.to_tsv(df_sfc, path.join(sfc.INTERIM_DATA_BASEPATH, "sfc_data_near.{l}.tsv".format(l=location)))
 
         logger.info('#3: gather surface weather data and save as a middle file in {l} !'.format(l=location))
-        del df_sfc
+        del (df_sfc, retrieve_sfc_point)
 
     logger.info('#3: end surface weather data processing !')
-    del (
-        sfc,
-        sfc_point_near_ukishima,
-        sfc_point_near_ougishima,
-        sfc_point_near_yonekurayama
-    )
+    del sfc
 
     #
     # forecast information
