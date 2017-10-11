@@ -10,22 +10,37 @@ sys.path.append(PROJECT_ROOT_DIRPATH)
 # Third-party modules
 import click
 from dotenv import find_dotenv, load_dotenv
-from pandas import offsets
+import pandas as pd
 # Hand-made modules
 from src.features.dataset import DatasetHandler
 from src.features.dummy import DummyFeatureHandler
 from src.features.time_series import TimeSeriesReshaper
 
 FILE_EXTENTION = "tsv"
-LOCATIONS = [
+NAN_NUMBER_THRESHOLD = 10000
+SHIFT_INDEX_OFFSETS_HOUR = -28
+OBJECTIVE_LABEL_NAMES = ["kwh", ]
+
+DROP_DATETIME_RANGE_UKISHIMA = [tuple()]
+DROP_DATETIME_RANGE_OUGISHIMA = [tuple()]
+DROP_DATETIME_RANGE_YONEKURAYAMA = [
+    (pd.to_datetime("2012-01-01 00:10:00"), pd.to_datetime("2012-01-27 00:00:00")),
+    (pd.to_datetime("2013-09-05 00:10:00"), pd.to_datetime("2015-03-07 00:00:00"))
+]
+
+LOCATIONS = (
     "ukishima",
     "ougishima",
-    "yonekurayama"
-]
-CIRCULAR_CATEGORICAL_VARIABLES = [
-    "wv"
-]
-SHIFT_INDEX_OFFSETS_HOUR = -28
+    "yonekurayama",
+)
+CIRCULAR_CATEGORICAL_VARIABLES = (
+    "wv",
+)
+DROP_DATETIME_RANGE_LOCATIONS = (
+    DROP_DATETIME_RANGE_UKISHIMA,
+    DROP_DATETIME_RANGE_OUGISHIMA,
+    DROP_DATETIME_RANGE_YONEKURAYAMA,
+)
 
 
 @click.command()
@@ -33,7 +48,7 @@ def main():
     logger = logging.getLogger(__name__)
     logger.info('#0: building features (explanatory values) from data')
 
-    maker = DatasetHandler()
+    maker = DatasetHandler(columns_y=OBJECTIVE_LABEL_NAMES)
     # TODO: 中間ファイルのI/O高速化(bloscpack使用)
 
     #
@@ -86,23 +101,17 @@ def main():
 
         sr_month = categ.extract_month(df_data.index)
         df_month_cos_sin = categ.convert_linear_to_circular(sr_month, categ.MONTH_CATEGORY_NUMBER)
-        df_data = df_data.merge(
-            df_month_cos_sin, how="outer", left_index=True, right_index=True
-        )
+        df_data = df_data.merge(df_month_cos_sin, **maker.KWARGS_OUTER_MERGE)
 
         sr_hour = categ.extract_hour(df_data.index)
         df_hour_cos_sin = categ.convert_linear_to_circular(sr_hour, categ.HOUR_CATEGORY_NUMBER)
-        df_data = df_data.merge(
-            df_hour_cos_sin, how="outer", left_index=True, right_index=True
-        )
+        df_data = df_data.merge(df_hour_cos_sin, **maker.KWARGS_OUTER_MERGE)
 
         for col_name in CIRCULAR_CATEGORICAL_VARIABLES:
             df_temp_cos_sin = categ.convert_linear_to_circular(
                 df_data[col_name], len(categ.FORECAST_ATTRIBUTES[col_name])
             )
-            df_data = df_data.merge(
-                df_temp_cos_sin, how="outer", left_index=True, right_index=True
-            )
+            df_data = df_data.merge(df_temp_cos_sin, **maker.KWARGS_OUTER_MERGE)
             df_data.drop(col_name, axis=1, inplace=True)
 
         maker.to_tsv(
@@ -127,7 +136,7 @@ def main():
     #
     reshaper = TimeSeriesReshaper()
 
-    for location in LOCATIONS:
+    for location, drop_index_list in zip(LOCATIONS, DROP_DATETIME_RANGE_LOCATIONS):
         dataset_filepath = path.join(
             maker.INTERIM_DATA_BASEPATH,
             "dataset.data.{l}.#2".format(l=location)
@@ -136,18 +145,15 @@ def main():
 
         logger.info('#3: read tsv file of {l} !'.format(l=location))
 
-        drop_col_name_list = reshaper.get_regex_matched_col_name(
-            df_data.columns, reshaper.REGEX_DROP_LABEL_NAME_PREFIXES
-        )
-        drop_col_name_list.extend(reshaper.DROP_LABEL_NAMES)
         df_X, df_y = maker.separate_X_y(df_data)
-        df_X.drop(drop_col_name_list, axis=1, inplace=True)
+
+        df_X = reshaper.drop_columns_of_many_nan(df_X, NAN_NUMBER_THRESHOLD)
 
         shift_col_name_list = reshaper.get_regex_matched_col_name(
             df_X.columns, reshaper.REGEX_SHIFT_COL_NAME_PREFIXES
         )
         df_X = reshaper.shift_indexes(
-            df_X, offsets.Hour(SHIFT_INDEX_OFFSETS_HOUR), shift_col_name_list
+            df_X, pd.offsets.Hour(SHIFT_INDEX_OFFSETS_HOUR), shift_col_name_list
         )
 
         df_X.fillna(method="bfill", inplace=True)
@@ -157,14 +163,16 @@ def main():
 
         X_train, X_test = maker.separate_train_test(df_X)
         y_train, _ = maker.separate_train_test(df_y)
+        df_train = X_train.merge(y_train, **maker.KWARGS_INNER_MERGE)
 
-        df_train = X_train.merge(
-            y_train,
-            how="inner",
-            left_index=True,
-            right_index=True
-        )
-        df_train = df_train.loc[y_train.squeeze().notnull(), :]
+        for drop_index in drop_index_list:
+            if len(drop_index) == 0:
+                break
+
+            df_train.drop(
+                reshaper.gen_datetime_index(drop_index[0], drop_index[1]),
+                axis=0, inplace=True
+            )
 
         maker.to_tsv(
             df_train, path.join(
@@ -184,7 +192,7 @@ def main():
             df_data, df_train, df_X, df_y,
             X_train, X_test,
             y_train,
-            drop_col_name_list, shift_col_name_list
+            shift_col_name_list, drop_index_list
         )
 
     logger.info('#3: end nan processings !')
@@ -209,12 +217,7 @@ def main():
         y_train = y_train.resample(
             rule="30T", axis=0, closed="left"
         ).sum()
-        df_train_every_30 = X_train.merge(
-            y_train,
-            how="inner",
-            left_index=True,
-            right_index=True
-        )
+        df_train_every_30 = X_train.merge(y_train, **maker.KWARGS_INNER_MERGE)
 
         # TODO: 20 ~ 40 minから40 min, 30 ~ 50 minから50 minのsample生成
 
