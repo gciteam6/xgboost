@@ -5,14 +5,13 @@ import pandas as pd
 # Hand-made modules
 from .base import DataFrameHandlerBase, BloscpackMixin
 
-OBJECTIVE_COLUMNS = ["kwh", ]
 REGEX_FLAG_NAME_PREFIX = "f_"
 
 
 class DatasetHandler(DataFrameHandlerBase, BloscpackMixin):
-    def __init__(self):
+    def __init__(self, columns_y):
         super().__init__()
-        self.OBJECTIVE_COLUMNS = OBJECTIVE_COLUMNS
+        self.columns_y = columns_y
         self.REGEX_FLAG_NAME_PREFIX = REGEX_FLAG_NAME_PREFIX
 
     def separate_train_test(self, df: pd.DataFrame):
@@ -22,8 +21,8 @@ class DatasetHandler(DataFrameHandlerBase, BloscpackMixin):
         return df_train, df_test
 
     def separate_X_y(self, df: pd.DataFrame):
-        df_y = df.loc[:, self.OBJECTIVE_COLUMNS].copy(deep=True)
-        df.drop(self.OBJECTIVE_COLUMNS, axis=1, inplace=True)
+        df_y = df.loc[:, self.columns_y].copy(deep=True)
+        df.drop(self.columns_y, axis=1, inplace=True)
 
         return df, df_y
 
