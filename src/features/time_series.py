@@ -71,6 +71,14 @@ class TimeSeriesReshaper(DataFrameHandlerBase):
             if re.compile("^" + name_prefix + ".*$").match(col_name)
         ]
 
+    @staticmethod
+    def drop_columns_of_many_nan(df, nan_number_threshold):
+        reserve_column_list = [
+            v < nan_number_threshold for v in df.isnull().sum(axis=0)
+        ]
+
+        return df.loc[:, reserve_column_list]
+
 
 if __name__ == '__main__':
     print("time series !")
