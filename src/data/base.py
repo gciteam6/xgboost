@@ -27,6 +27,11 @@ KWARGS_READ_CSV_BASE = {
 KWARGS_TO_CSV_BASE = {
     "sep": "\t"
 }
+KWARGS_MERGE_TWO_DATAFRAME = {
+    "how": "outer",
+    "left_index": True,
+    "right_index": True
+}
 
 LATLNGALT_UKISHIMA = (35.517558, 139.786920, 4.7)
 LATLNGALT_OUGISHIMA = (35.488680, 139.727451, 4.8)
@@ -42,6 +47,7 @@ class PathHandlerBase(object):
         self.RAW_DATA_BASEPATH = RAW_DATA_BASEPATH
         self.INTERIM_DATA_BASEPATH = INTERIM_DATA_BASEPATH
         self.PROCESSED_DATA_BASEPATH = PROCESSED_DATA_BASEPATH
+        self.KWARGS_MERGE_TWO_DATAFRAME = KWARGS_MERGE_TWO_DATAFRAME
         self.path = path
 
     @staticmethod
@@ -86,6 +92,14 @@ class DataFrameHandlerBase(PathHandlerBase):
     def gen_norm_datetime(year, month, day, hour, minute, second):
         return datetime.datetime(year, month, day) + \
                datetime.timedelta(hours=hour, minutes=minute, seconds=second)
+
+    @staticmethod
+    def add_annotations_to_column_names(df, attribute_name, location_name):
+        return [
+            '_'.join([
+                str(column_name), attribute_name, location_name
+            ]) for column_name in df.columns
+        ]
 
 
 class LocationHandlerBase(DataFrameHandlerBase):
