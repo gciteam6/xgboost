@@ -6,6 +6,7 @@ import pandas as pd
 from .base import LocationHandlerBase
 
 AMD_REGEX_DIRNAME = "amd[1-5]"
+AMD_COLUMN_NAME_ANNOTATION = "amd"
 KWARGS_READ_CSV_AMD_MASTER = {
     "index_col": 0,
 }
@@ -23,10 +24,12 @@ class AmedasHandler(LocationHandlerBase):
         self.amd_file_prefix = amd_file_prefix
         self.amd_file_suffix = amd_file_suffix
         self.AMD_REGEX_DIRNAME = AMD_REGEX_DIRNAME
+        self.AMD_COLUMN_NAME_ANNOTATION = AMD_COLUMN_NAME_ANNOTATION
 
     def read_tsv(self, path_or_buf):
         df_ret = pd.read_csv(path_or_buf, **self.gen_read_csv_kwargs(KWARGS_READ_CSV_AMD_LOG))
         df_ret.index = self.parse_datetime(pd.Series(df_ret.index).apply(str))
+
         return df_ret
 
     def to_tsv(self, df, path_or_buf, **kwargs):
@@ -52,18 +55,19 @@ class AmedasHandler(LocationHandlerBase):
             raise ValueError("Empty list ?")
 
         df_ret = self.read_tsv(filepath_list[0])
-        df_ret.columns = [str(col_name) + '_' + location_list[0] for col_name in df_ret.columns]
+        df_ret.columns = self.add_annotations_to_column_names(
+            df_ret, self.AMD_COLUMN_NAME_ANNOTATION, location_list[0]
+        )
 
         if len(filepath_list) > 1:
             for filepath, location in zip(filepath_list[1:], location_list[1:]):
                 df_temp = self.read_tsv(filepath_list[0])
-                df_temp.columns = [str(col_name) + '_' + location for col_name in df_temp.columns]
+                df_temp.columns = self.add_annotations_to_column_names(
+                    df_temp, self.AMD_COLUMN_NAME_ANNOTATION, location
+                )
 
                 df_ret = df_ret.merge(
-                    df_temp,
-                    how="outer",
-                    left_index=True,
-                    right_index=True,
+                    df_temp, **self.KWARGS_MERGE_TWO_DATAFRAME
                 )
 
         return df_ret
