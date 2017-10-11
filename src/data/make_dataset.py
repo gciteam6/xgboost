@@ -22,6 +22,11 @@ AMD_MASTER_FILENAME = "amd_master.tsv"
 SFC_MASTER_FILENAME = "sfc_master.tsv"
 TRAIN_KWH_FILENAME = "train_kwh.tsv"
 OBJECTIVE_COLUMN_NAME = "kwh"
+
+LATLNGALT_UKISHIMA = (35.517558, 139.786920, 4.7)
+LATLNGALT_OUGISHIMA = (35.488680, 139.727451, 4.8)
+LATLNGALT_YONEKURAYAMA = (35.583302, 138.573118, 366.9)
+
 LOCATIONS = [
     "ukishima",
     "ougishima",
@@ -64,13 +69,13 @@ def main(input_dirpath,
     amd = AmedasHandler(path.join(input_dirpath, AMD_MASTER_FILENAME))
 
     amd_point_near_ukishima = amd.get_near_observation_points(
-        amd.LATLNGALT_UKISHIMA[0], amd.LATLNGALT_UKISHIMA[1], amd_half_mashgrid_size
+        LATLNGALT_UKISHIMA[0], LATLNGALT_UKISHIMA[1], amd_half_mashgrid_size
     )
     amd_point_near_ougishima = amd.get_near_observation_points(
-        amd.LATLNGALT_OUGISHIMA[0], amd.LATLNGALT_OUGISHIMA[1], amd_half_mashgrid_size
+        LATLNGALT_OUGISHIMA[0], LATLNGALT_OUGISHIMA[1], amd_half_mashgrid_size
     )
     amd_point_near_yonekurayama = amd.get_near_observation_points(
-        amd.LATLNGALT_YONEKURAYAMA[0], amd.LATLNGALT_YONEKURAYAMA[1], amd_half_mashgrid_size
+        LATLNGALT_YONEKURAYAMA[0], LATLNGALT_YONEKURAYAMA[1], amd_half_mashgrid_size
     )
 
     logger.info('#2: get amedas observation points !')
@@ -99,13 +104,13 @@ def main(input_dirpath,
     sfc = SurfaceHandler(path.join(input_dirpath, SFC_MASTER_FILENAME))
 
     sfc_point_near_ukishima = sfc.get_near_observation_points(
-        sfc.LATLNGALT_UKISHIMA[0], sfc.LATLNGALT_UKISHIMA[1], scf_half_mashgrid_size
+        LATLNGALT_UKISHIMA[0], LATLNGALT_UKISHIMA[1], scf_half_mashgrid_size
     )
     sfc_point_near_ougishima = sfc.get_near_observation_points(
-        sfc.LATLNGALT_OUGISHIMA[0], sfc.LATLNGALT_OUGISHIMA[1], scf_half_mashgrid_size
+        LATLNGALT_OUGISHIMA[0], LATLNGALT_OUGISHIMA[1], scf_half_mashgrid_size
     )
     sfc_point_near_yonekurayama = sfc.get_near_observation_points(
-        sfc.LATLNGALT_YONEKURAYAMA[0], sfc.LATLNGALT_YONEKURAYAMA[1], scf_half_mashgrid_size
+        LATLNGALT_YONEKURAYAMA[0], LATLNGALT_YONEKURAYAMA[1], scf_half_mashgrid_size
     )
 
     logger.info('#3: get surface weather observation points !')

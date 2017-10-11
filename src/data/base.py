@@ -33,9 +33,6 @@ KWARGS_MERGE_TWO_DATAFRAME = {
     "right_index": True
 }
 
-LATLNGALT_UKISHIMA = (35.517558, 139.786920, 4.7)
-LATLNGALT_OUGISHIMA = (35.488680, 139.727451, 4.8)
-LATLNGALT_YONEKURAYAMA = (35.583302, 138.573118, 366.9)
 LABEL_LAT_HOUR, LABEL_LAT_MINUTE = "lat1", "lat2"
 LABEL_LNG_HOUR, LABEL_LNG_MINUTE = "lng1", "lng2"
 LABEL_LAT_DECIMAL, LABEL_LNG_DECIMAL = "lat_dec", "lng_dec"
@@ -105,10 +102,6 @@ class DataFrameHandlerBase(PathHandlerBase):
 class LocationHandlerBase(DataFrameHandlerBase):
     def __init__(self, master_filepath, **kwargs_location):
         super().__init__()
-        self.LATLNGALT_UKISHIMA = LATLNGALT_UKISHIMA
-        self.LATLNGALT_OUGISHIMA = LATLNGALT_OUGISHIMA
-        self.LATLNGALT_YONEKURAYAMA = LATLNGALT_YONEKURAYAMA
-
         self.location = pd.read_csv(
             master_filepath, **self.gen_read_csv_kwargs(kwargs_location)
         )
