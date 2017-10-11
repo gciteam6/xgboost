@@ -28,6 +28,16 @@ KWARGS_READ_CSV_BASE = {
 KWARGS_TO_CSV_BASE = {
     "sep": "\t"
 }
+KWARGS_INNER_MERGE = {
+    "how": "inner",
+    "left_index": True,
+    "right_index": True
+}
+KWARGS_OUTER_MERGE = {
+    "how": "outer",
+    "left_index": True,
+    "right_index": True
+}
 
 MONTH_LABEL_NAME = "month"
 HOUR_LABEL_NAME = "hour"
@@ -56,6 +66,8 @@ class DataFrameHandlerBase(PathHandlerBase):
         self.TEST_DATE_RANGE = TEST_DATE_RANGE
         self.KWARGS_READ_CSV_BASE = KWARGS_READ_CSV_BASE
         self.KWARGS_TO_CSV_BASE = KWARGS_TO_CSV_BASE
+        self.KWARGS_INNER_MERGE = KWARGS_INNER_MERGE
+        self.KWARGS_OUTER_MERGE = KWARGS_OUTER_MERGE
 
     def read_tsv(self, path_or_buf, **kwargs):
         df_ret = pd.read_csv(path_or_buf, **self.gen_read_csv_kwargs(kwargs))
@@ -79,6 +91,10 @@ class DataFrameHandlerBase(PathHandlerBase):
             ret_dict.update(kwargs_to_add)
 
         return ret_dict
+
+    @staticmethod
+    def gen_datetime_index(start, end, freq_min: int = 10):
+        return pd.date_range(start, end, freq=pd.offsets.Minute(freq_min))
 
 
 class BloscpackMixin:
