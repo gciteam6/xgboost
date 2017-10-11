@@ -47,6 +47,33 @@ class DatasetHandler(DataFrameHandlerBase, BloscpackMixin):
             if re.compile("^" + name_prefix + ".*$").match(col_name)
         ]
 
+    def read_blp_as_df(self, prexix_filepath, suffix_filepath):
+        values = self.read_blp(
+            '.'.join([prexix_filepath, "values", suffix_filepath])
+        )
+        index = self.read_listfile(
+            '.'.join([prexix_filepath, "index", suffix_filepath])
+        )
+        columns = self.read_listfile(
+            '.'.join([prexix_filepath, "columns", suffix_filepath])
+        )
+
+        return pd.DataFrame(values, index=pd.DatetimeIndex(index), columns=columns)
+
+    def to_blp_via_df(self, df, prexix_filepath, suffix_filepath):
+        self.to_blp(
+            df.values.astype('U'),
+            '.'.join([prexix_filepath, "values", suffix_filepath])
+        )
+        self.to_listfile(
+            df.index,
+            '.'.join([prexix_filepath, "index", suffix_filepath])
+        )
+        self.to_listfile(
+            df.columns,
+            '.'.join([prexix_filepath, "columns", suffix_filepath])
+        )
+
 
 if __name__ == '__main__':
     print("dataset maker !")

@@ -1,7 +1,7 @@
 # Built-in modules
 from copy import deepcopy
+import csv
 from os import pardir, path, makedirs
-import datetime
 # Third-party modules
 import numpy as np
 import pandas as pd
@@ -107,9 +107,17 @@ class BloscpackMixin:
         bp.pack_ndarray_file(ndarray, serialized_filepath)
 
     @staticmethod
-    def to_txt(string_list, path_or_buf):
-        with open(path_or_buf, 'w') as f:
-            f.write("\t".join(string_list))
+    def read_listfile(path_or_buf):
+        with open(path_or_buf, 'r', newline='') as f:
+            reader = csv.reader(f, delimiter='\t')
+
+            return [string for row in reader for string in row]
+
+    @staticmethod
+    def to_listfile(string_list, path_or_buf):
+        with open(path_or_buf, 'w', newline='') as f:
+            writer = csv.writer(f, delimiter='\t')
+            writer.writerow(string_list)
 
 
 class CategoricalHandlerBase(PathHandlerBase):
