@@ -1,9 +1,12 @@
 # Built-in modules
 from copy import deepcopy
+import csv
 from os import pardir, path, makedirs
 import datetime
 # Third-party modules
+import numpy as np
 import pandas as pd
+import bloscpack as bp
 
 PROJECT_ROOT_PATH = path.join(path.dirname(__file__), pardir, pardir)
 RAW_DATA_BASEPATH = path.join(PROJECT_ROOT_PATH, "data/raw")
@@ -27,7 +30,7 @@ KWARGS_READ_CSV_BASE = {
 KWARGS_TO_CSV_BASE = {
     "sep": "\t"
 }
-KWARGS_MERGE_TWO_DATAFRAME = {
+KWARGS_OUTER_MERGE = {
     "how": "outer",
     "left_index": True,
     "right_index": True
@@ -62,7 +65,7 @@ class DataFrameHandlerBase(PathHandlerBase):
         self.TEST_DATE_RANGE = TEST_DATE_RANGE
         self.KWARGS_READ_CSV_BASE = KWARGS_READ_CSV_BASE
         self.KWARGS_TO_CSV_BASE = KWARGS_TO_CSV_BASE
-        self.KWARGS_MERGE_TWO_DATAFRAME = KWARGS_MERGE_TWO_DATAFRAME
+        self.KWARGS_OUTER_MERGE = KWARGS_OUTER_MERGE
 
     def gen_read_csv_kwargs(self, kwargs_to_add: dict):
         ret_dict = deepcopy(self.KWARGS_READ_CSV_BASE)
@@ -97,6 +100,29 @@ class DataFrameHandlerBase(PathHandlerBase):
                 str(column_name), attribute_name, location_name
             ]) for column_name in df.columns
         ]
+
+
+class BloscpackMixin:
+    @staticmethod
+    def read_blp(serialized_filepath):
+        return bp.unpack_ndarray_file(serialized_filepath)
+
+    @staticmethod
+    def to_blp(ndarray: np.array, serialized_filepath):
+        bp.pack_ndarray_file(ndarray, serialized_filepath)
+
+    @staticmethod
+    def read_listfile(path_or_buf):
+        with open(path_or_buf, 'r', newline='') as f:
+            reader = csv.reader(f, delimiter='\t')
+
+            return [string for row in reader for string in row]
+
+    @staticmethod
+    def to_listfile(string_list, path_or_buf):
+        with open(path_or_buf, 'w', newline='') as f:
+            writer = csv.writer(f, delimiter='\t')
+            writer.writerow(string_list)
 
 
 class LocationHandlerBase(DataFrameHandlerBase):

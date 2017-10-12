@@ -39,10 +39,7 @@ class DatasetCollector(DataFrameHandlerBase):
         if len(filepath_list) > 1:
             for filepath in filepath_list[1:]:
                 df_ret = df_ret.merge(
-                    self.read_tsv(filepath),
-                    how="outer",
-                    left_index=True,
-                    right_index=True
+                    self.read_tsv(filepath), **self.KWARGS_OUTER_MERGE
                 )
 
         return df_ret
