@@ -45,8 +45,7 @@ class TimeSeriesReshaper(DataFrameHandlerBase):
         self.DROP_LABEL_NAMES = DROP_LABEL_NAMES
         self.REGEX_SHIFT_COL_NAME_PREFIXES = REGEX_SHIFT_COL_NAME_PREFIXES
 
-    @staticmethod
-    def shift_indexes(df, freq, shift_col_name_list):
+    def shift_indexes(self, df, freq, shift_col_name_list):
         non_shift_col_name_list = [
             col_name for col_name in df.columns \
             if col_name not in shift_col_name_list
@@ -55,12 +54,7 @@ class TimeSeriesReshaper(DataFrameHandlerBase):
         df_shifted = df[shift_col_name_list].shift(freq=freq, axis=0)
         df_non_shifted = df[non_shift_col_name_list]
 
-        return df_non_shifted.merge(
-            df_shifted,
-            how="outer",
-            left_index=True,
-            right_index=True
-        )
+        return df_non_shifted.merge(df_shifted, **self.KWARGS_OUTER_MERGE)
 
     @staticmethod
     def get_regex_matched_col_name(col_name_list, regex_name_prefix_list):
