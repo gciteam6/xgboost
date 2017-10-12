@@ -58,7 +58,7 @@ def main():
             maker.PROCESSED_DATA_BASEPATH,
             "dataset.amd_sfc_forecast_kwh.{l}.{e}".format(l=location, e=FILE_EXTENTION)
         )
-        df_data_flags = maker.read_tsv(dataset_filepath).iloc[:50000, :]
+        df_data_flags = maker.read_tsv(dataset_filepath)
         df_data, df_flags = maker.split_data_and_flags(df_data_flags)
 
         # TODO: amd, sfc利用フラグの扱いに関する処理の実装
