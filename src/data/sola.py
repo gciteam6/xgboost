@@ -6,17 +6,17 @@ from .base import DataFrameHandlerBase
 KWARGS_READ_CSV_SOLA = {
     "index_col": 0,
 }
-LABEL_SOLA_UKISHIMA = "SOLA01"
-LABEL_SOLA_OUGISHIMA = "SOLA02"
-LABEL_SOLA_YONEKURAYAMA = "SOLA03"
+SOLA_LOCATION_LABEL_NAMES = {
+    "ukishima": "SOLA01",
+    "ougishima": "SOLA02",
+    "yonekurayama": "SOLA03"
+}
 
 
 class SolarPhotovoltaicHandler(DataFrameHandlerBase):
     def __init__(self):
         super().__init__()
-        self.LABEL_SOLA_UKISHIMA = LABEL_SOLA_UKISHIMA
-        self.LABEL_SOLA_OUGISHIMA = LABEL_SOLA_OUGISHIMA
-        self.LABEL_SOLA_YONEKURAYAMA = LABEL_SOLA_YONEKURAYAMA
+        self.SOLA_LOCATION_LABEL_NAMES = SOLA_LOCATION_LABEL_NAMES
 
     def read_tsv(self, path_or_buf):
         df_ret = pd.read_csv(path_or_buf, **self.gen_read_csv_kwargs(KWARGS_READ_CSV_SOLA))

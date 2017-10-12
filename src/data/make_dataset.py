@@ -172,9 +172,8 @@ def main(input_dirpath,
     sola = SolarPhotovoltaicHandler()
     df_train_kwh = sola.read_tsv(path.join(input_dirpath, TRAIN_KWH_FILENAME))
 
-    for col_label, location in zip(
-            [sola.LABEL_SOLA_UKISHIMA, sola.LABEL_SOLA_OUGISHIMA, sola.LABEL_SOLA_YONEKURAYAMA],
-            LOCATIONS):
+    for location in LOCATIONS:
+        col_label = sola.SOLA_LOCATION_LABEL_NAMES[location]
         df_sola = df_train_kwh.loc[:, col_label].to_frame(name=OBJECTIVE_COLUMN_NAME)
         sola.to_tsv(df_sola, path.join(sola.INTERIM_DATA_BASEPATH, "sola_data.{l}.tsv".format(l=location)))
 
