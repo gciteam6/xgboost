@@ -82,7 +82,11 @@ def main(input_dirpath,
 
         amd_filepath = amd.gen_filepath_list(retrieve_amd_point.index)
         df_amd = amd.retrieve_data(amd_filepath, retrieve_amd_point["name"].as_matrix())
-        amd.to_tsv(df_amd, path.join(amd.INTERIM_DATA_BASEPATH, "amd_data_near.{l}.tsv".format(l=location)))
+        amd.to_blp_via_df(
+            df_amd,
+            path.join(amd.INTERIM_DATA_BASEPATH, "amd_data"),
+            "{l}.data#2".format(l=location)
+        )
 
         logger.info('#2: gather amedas data and save as a middle file in {l} !'.format(l=location))
         del (df_amd, retrieve_amd_point)
@@ -104,7 +108,11 @@ def main(input_dirpath,
 
         sfc_filepath = sfc.gen_filepath_list(retrieve_sfc_point.index)
         df_sfc = sfc.retrieve_data(sfc_filepath, retrieve_sfc_point["name"].as_matrix())
-        sfc.to_tsv(df_sfc, path.join(sfc.INTERIM_DATA_BASEPATH, "sfc_data_near.{l}.tsv".format(l=location)))
+        sfc.to_blp_via_df(
+            df_sfc,
+            path.join(sfc.INTERIM_DATA_BASEPATH, "sfc_data"),
+            "{l}.data#3".format(l=location)
+        )
 
         logger.info('#3: gather surface weather data and save as a middle file in {l} !'.format(l=location))
         del (df_sfc, retrieve_sfc_point)
@@ -150,9 +158,10 @@ def main(input_dirpath,
             del sr_expand_time_ranged_data
 
         df_forecast_expanded.drop(time_ranged_data_name_list, axis=1, inplace=True)
-        forecast.to_tsv(
+        forecast.to_blp_via_df(
             df_forecast_expanded,
-            path.join(forecast.INTERIM_DATA_BASEPATH, "forecast_data.{l}.tsv".format(l=location))
+            path.join(forecast.INTERIM_DATA_BASEPATH, "forecast_data"),
+            "{l}.data#4".format(l=location)
         )
 
         logger.info('#4: gather forecast data and save as a middle file in {l} !'.format(l=location))
@@ -175,7 +184,11 @@ def main(input_dirpath,
     for location in LOCATIONS:
         col_label = sola.SOLA_LOCATION_LABEL_NAMES[location]
         df_sola = df_train_kwh.loc[:, col_label].to_frame(name=OBJECTIVE_COLUMN_NAME)
-        sola.to_tsv(df_sola, path.join(sola.INTERIM_DATA_BASEPATH, "sola_data.{l}.tsv".format(l=location)))
+        sola.to_blp_via_df(
+            df_sola,
+            path.join(sola.INTERIM_DATA_BASEPATH, "sola_data"),
+            "{l}.data#5".format(l=location)
+        )
 
         logger.info('#5: get solar data and save as a middle file in {l}!'.format(l=location))
         del df_sola
@@ -189,14 +202,14 @@ def main(input_dirpath,
     collector = DatasetCollector()
 
     for location in LOCATIONS:
-        location_filepath = collector.gen_filepath_list(location)
-        df_train_for_each_location = collector.retrieve_data(location_filepath)
-        collector.to_tsv(
+        filepath_prefix_suffix_nested_list = \
+            collector.gen_filepath_prefix_suffix_nested_list(location)
+        df_train_for_each_location = \
+            collector.retrieve_data(filepath_prefix_suffix_nested_list)
+        collector.to_blp_via_df(
             df_train_for_each_location,
-            path.join(
-                collector.PROCESSED_DATA_BASEPATH,
-                "dataset.amd_sfc_forecast_kwh.{l}.tsv".format(l=location)
-            )
+            path.join(collector.PROCESSED_DATA_BASEPATH, "dataset.amd_sfc_forecast_kwh"),
+            "{l}.blp".format(l=location)
         )
 
         logger.info('#6: generate and save the dataset as a processed file in {l} !'.format(l=location))
