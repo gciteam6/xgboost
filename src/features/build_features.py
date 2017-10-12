@@ -66,12 +66,12 @@ def main():
         maker.to_blp_via_df(
             df_data,
             path.join(maker.INTERIM_DATA_BASEPATH, "dataset.data"),
-            "{l}.#1".format(l=location)
+            "{l}.features#1".format(l=location)
         )
         maker.to_blp_via_df(
             df_flags,
             path.join(maker.INTERIM_DATA_BASEPATH, "dataset.flags"),
-            "{l}.#1".format(l=location)
+            "{l}.features#1".format(l=location)
         )
 
         logger.info('#1: save data & flags as each files of {l} !'.format(l=location))
@@ -87,7 +87,7 @@ def main():
     for location in LOCATIONS:
         df_data = maker.read_blp_as_df(
             path.join(maker.INTERIM_DATA_BASEPATH, "dataset.data"),
-            "{l}.#1".format(l=location)
+            "{l}.features#1".format(l=location)
         )
 
         logger.info('#2: read tsv file of {l} !'.format(l=location))
@@ -113,7 +113,7 @@ def main():
         maker.to_blp_via_df(
             df_data,
             path.join(maker.INTERIM_DATA_BASEPATH, "dataset.data"),
-            "{l}.#2".format(l=location)
+            "{l}.features#2".format(l=location)
         )
 
         logger.info('#2: covert categorical features to dummy ones & save as a file in {l} !'.format(l=location))
@@ -134,7 +134,7 @@ def main():
     for location, drop_index_list in zip(LOCATIONS, DROP_DATETIME_RANGE_LOCATIONS):
         df_data = maker.read_blp_as_df(
             path.join(maker.INTERIM_DATA_BASEPATH, "dataset.data"),
-            "{l}.#2".format(l=location)
+            "{l}.features#2".format(l=location)
         )
 
         logger.info('#3: read tsv file of {l} !'.format(l=location))
@@ -173,12 +173,12 @@ def main():
         maker.to_blp_via_df(
             df_data,
             path.join(maker.INTERIM_DATA_BASEPATH, "dataset.train"),
-            "{l}.#3".format(l=location)
+            "{l}.features#3".format(l=location)
         )
         maker.to_blp_via_df(
             df_data,
             path.join(maker.INTERIM_DATA_BASEPATH, "dataset.test"),
-            "{l}.#3".format(l=location)
+            "{l}.features#3".format(l=location)
         )
 
         logger.info('#3: save train/test dataset as each files in {l} !'.format(l=location))
@@ -198,7 +198,7 @@ def main():
     for location in LOCATIONS:
         df_train_every_10 = maker.read_blp_as_df(
             path.join(maker.INTERIM_DATA_BASEPATH, "dataset.train"),
-            "{l}.#3".format(l=location)
+            "{l}.features#3".format(l=location)
         )
 
         logger.info('#4: read tsv file of the train section in {l} !'.format(l=location))
@@ -218,7 +218,7 @@ def main():
 
         X_test = maker.read_blp_as_df(
             path.join(maker.INTERIM_DATA_BASEPATH, "dataset.test"),
-            "{l}.#3".format(l=location)
+            "{l}.features#3".format(l=location)
         )
 
         logger.info('#4: read tsv file of the test section in {l} !'.format(l=location))
@@ -234,12 +234,12 @@ def main():
         maker.to_blp_via_df(
             df_train_every_30,
             path.join(maker.PROCESSED_DATA_BASEPATH, "dataset.train_X_y"),
-            "{l}.#4".format(l=location)
+            "{l}.features#4".format(l=location)
         )
         maker.to_blp_via_df(
             X_test,
             path.join(maker.PROCESSED_DATA_BASEPATH, "dataset.test_X"),
-            "{l}.#4".format(l=location)
+            "{l}.features#4".format(l=location)
         )
 
         logger.info('#4: save train/test dataset as each files in {l} !'.format(l=location))
