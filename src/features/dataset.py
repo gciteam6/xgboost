@@ -27,7 +27,7 @@ class DatasetHandler(DataFrameHandlerBase, BloscpackMixin):
         return df, df_y
 
     def split_data_and_flags(self, df):
-        pattern = re.compile("^" + self.REGEX_FLAG_NAME_PREFIX + ".*$")
+        pattern = re.compile("^" + self.REGEX_FLAG_NAME_PREFIX)
         flag_col_name_list = [
             col_name for col_name in df.columns \
             if pattern.match(col_name)
@@ -41,10 +41,10 @@ class DatasetHandler(DataFrameHandlerBase, BloscpackMixin):
     @staticmethod
     def get_regex_matched_col_name(col_name_list, regex_name_prefix_list):
         return [
-            col_name \
+            col_name \  
             for col_name in col_name_list \
             for name_prefix in regex_name_prefix_list \
-            if re.compile("^" + name_prefix + ".*$").match(col_name)
+            if re.match("^" + name_prefix, col_name)
         ]
 
     def read_blp_as_df(self, prexix_filepath, suffix_filepath):
@@ -62,7 +62,7 @@ class DatasetHandler(DataFrameHandlerBase, BloscpackMixin):
 
     def to_blp_via_df(self, df, prexix_filepath, suffix_filepath):
         self.to_blp(
-            df.values.astype('U'),
+            df.values.astype('U8'),
             '.'.join([prexix_filepath, "values", suffix_filepath])
         )
         self.to_listfile(
