@@ -54,11 +54,15 @@ def main():
     # get samples from the serialized datasets
     #
     for location in LOCATIONS:
-        dataset_filepath = path.join(
-            maker.PROCESSED_DATA_BASEPATH,
-            "dataset.amd_sfc_forecast_kwh.{l}.{e}".format(l=location, e=FILE_EXTENTION)
+        # dataset_filepath = path.join(
+        #     maker.PROCESSED_DATA_BASEPATH,
+        #     "dataset.amd_sfc_forecast_kwh.{l}.{e}".format(l=location, e=FILE_EXTENTION)
+        # )
+        # df_data_flags = maker.read_tsv(dataset_filepath)
+        df_data_flags = maker.read_blp_as_df(
+            path.join(maker.PROCESSED_DATA_BASEPATH, "dataset.amd_sfc_forecast_kwh"),
+            "{l}.blp".format(l=location)
         )
-        df_data_flags = maker.read_tsv(dataset_filepath)
         df_data, df_flags = maker.split_data_and_flags(df_data_flags)
 
         # TODO: amd, sfc利用フラグの扱いに関する処理の実装
@@ -234,12 +238,12 @@ def main():
         maker.to_blp_via_df(
             df_train_every_30,
             path.join(maker.PROCESSED_DATA_BASEPATH, "dataset.train_X_y"),
-            "{l}.features#4".format(l=location)
+            "{l}.blp".format(l=location)
         )
         maker.to_blp_via_df(
             X_test,
             path.join(maker.PROCESSED_DATA_BASEPATH, "dataset.test_X"),
-            "{l}.features#4".format(l=location)
+            "{l}.blp".format(l=location)
         )
 
         logger.info('#4: save train/test dataset as each files in {l} !'.format(l=location))
