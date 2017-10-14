@@ -1,6 +1,7 @@
 # Built-in modules
 import re
 # Third-party modules
+import numpy as np
 import pandas as pd
 # Hand-made modules
 from .base import DataFrameHandlerBase, BloscpackMixin
@@ -41,37 +42,37 @@ class DatasetHandler(DataFrameHandlerBase, BloscpackMixin):
     @staticmethod
     def get_regex_matched_col_name(col_name_list, regex_name_prefix_list):
         return [
-            col_name \  
+            col_name \
             for col_name in col_name_list \
             for name_prefix in regex_name_prefix_list \
             if re.match("^" + name_prefix, col_name)
         ]
 
-    def read_blp_as_df(self, prexix_filepath, suffix_filepath):
+    def read_blp_as_df(self, prefix_filepath, suffix_filepath):
         values = self.read_blp(
-            '.'.join([prexix_filepath, "values", suffix_filepath])
+            '.'.join([prefix_filepath, "values", suffix_filepath])
         )
-        index = self.read_listfile(
-            '.'.join([prexix_filepath, "index", suffix_filepath])
+        index = self.read_blp(
+            '.'.join([prefix_filepath, "index", suffix_filepath])
         )
-        columns = self.read_listfile(
-            '.'.join([prexix_filepath, "columns", suffix_filepath])
+        columns = self.read_blp(
+            '.'.join([prefix_filepath, "columns", suffix_filepath])
         )
 
         return pd.DataFrame(values, index=pd.DatetimeIndex(index), columns=columns)
 
-    def to_blp_via_df(self, df, prexix_filepath, suffix_filepath):
+    def to_blp_via_df(self, df, prefix_filepath, suffix_filepath):
         self.to_blp(
             df.values.astype('U8'),
-            '.'.join([prexix_filepath, "values", suffix_filepath])
+            '.'.join([prefix_filepath, "values", suffix_filepath])
         )
-        self.to_listfile(
-            df.index,
-            '.'.join([prexix_filepath, "index", suffix_filepath])
+        self.to_blp(
+            np.asarray(df.index),
+            '.'.join([prefix_filepath, "index", suffix_filepath])
         )
-        self.to_listfile(
-            df.columns,
-            '.'.join([prexix_filepath, "columns", suffix_filepath])
+        self.to_blp(
+            np.asarray(df.columns).astype('U'),
+            '.'.join([prefix_filepath, "columns", suffix_filepath])
         )
 
 
