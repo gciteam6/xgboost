@@ -64,7 +64,7 @@ class DatasetHandler(DataFrameHandlerBase, BloscpackMixin):
 
     def to_blp_via_df(self, df, prefix_filepath, suffix_filepath):
         self.to_blp(
-            df.values.astype('U10'),
+            df.values.astype('U8'),
             '.'.join([prefix_filepath, "values", suffix_filepath])
         )
         self.to_blp(

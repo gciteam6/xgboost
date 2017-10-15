@@ -1,4 +1,5 @@
 # Built-in modules
+import gc
 from os import path, pardir
 import sys
 import logging
@@ -107,6 +108,7 @@ def main(input_dirpath,
 
     logger.info('#2: end amedas data processing !')
     del amd
+    gc.collect()
 
     #
     # surface weather information
@@ -143,6 +145,7 @@ def main(input_dirpath,
 
     logger.info('#3: end surface weather data processing !')
     del sfc
+    gc.collect()
 
     #
     # forecast information
@@ -199,6 +202,7 @@ def main(input_dirpath,
 
     logger.info('#4: end forecast data processing !')
     del forecast
+    gc.collect()
 
     #
     # train_kwh information
@@ -220,6 +224,7 @@ def main(input_dirpath,
 
     logger.info('#5: end solar data processing !')
     del (sola, df_train_kwh)
+    gc.collect()
 
     #
     # gether data
@@ -248,6 +253,7 @@ def main(input_dirpath,
 
         logger.info('#6: end processing of train data segment @ {l} !'.format(l=location))
         del df_train_segment
+        gc.collect()
 
         _, df_test_segment = maker.separate_train_test(
             maker.retrieve_data(filepath_prefix_suffix_nested_list)
@@ -267,6 +273,7 @@ def main(input_dirpath,
 
         logger.info('#6: end processing of test data segment @ {l} !'.format(l=location))
         del df_test_segment
+        gc.collect()
 
     logger.info('#6: end src/data/make_dataset.py !')
 
