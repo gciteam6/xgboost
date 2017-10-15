@@ -2,21 +2,9 @@
 import re
 # Hand-made modules
 from .base import DataFrameHandlerBase
-
-REGEX_DROP_LABEL_NAME_PREFIXES = {
-    "max_ws_",
-    "ave_wv_",
-    "ave_ws_",
-    "max_tp_",
-    "min_tp_",
-    "sl_",
-    "sd_",
-    "vb_",
-    "weather_",
-    "dsr_",
-    "dsd_",
-    "dsr_"
-}
+REGEX_DROP_LABEL_NAME_PREFIXES = [
+    "weather_"
+]
 DROP_LABEL_NAMES = [
     "weather",
     "weather_detail",
@@ -24,17 +12,25 @@ DROP_LABEL_NAMES = [
     "wave"
 ]
 REGEX_SHIFT_COL_NAME_PREFIXES = [
-    "pr_*",
-    "max_iws_*",
-    "gsr_*",
-    "lap_*",
-    "sap_*",
-    "cap_*",
-    "3h_cap_*",
-    "rhm_*",
-    "min_rhm_*",
-    "vp_*",
-    "dtp_*",
+    "pr_",
+    "max_iws_",
+    "ave_wv_",
+    "ave_ws_",
+    "max_tp_",
+    "min_tp_",
+    "sl_",
+    "dsr_",
+    "gsr_",
+    "sd_",
+    "dsd_",
+    "lap_",
+    "sap_",
+    "cap_",
+    "3h_cap_",
+    "rhm_",
+    "min_rhm_",
+    "vp_",
+    "dtp_",
 ]
 
 
