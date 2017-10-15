@@ -67,7 +67,7 @@ class BloscpackMixin:
         bp.pack_ndarray_file(ndarray, serialized_filepath)
 
 
-class DataFrameHandlerBase(PathHandlerBase, BloscpackMixin):
+class DataFrameHandlerBase(PathHandlerBase):
     def __init__(self):
         super().__init__()
         self.DATETIME_FORMAT = DATETIME_FORMAT
@@ -110,33 +110,6 @@ class DataFrameHandlerBase(PathHandlerBase, BloscpackMixin):
                 str(column_name), attribute_name, location_name
             ]) for column_name in df.columns
         ]
-
-    def read_blp_as_df(self, prefix_filepath, suffix_filepath):
-        values = self.read_blp(
-            '.'.join([prefix_filepath, "values", suffix_filepath])
-        )
-        index = self.read_blp(
-            '.'.join([prefix_filepath, "index", suffix_filepath])
-        )
-        columns = self.read_blp(
-            '.'.join([prefix_filepath, "columns", suffix_filepath])
-        )
-
-        return pd.DataFrame(values, index=pd.DatetimeIndex(index), columns=columns)
-
-    def to_blp_via_df(self, df, prefix_filepath, suffix_filepath):
-        self.to_blp(
-            df.values.astype('U8'),
-            '.'.join([prefix_filepath, "values", suffix_filepath])
-        )
-        self.to_blp(
-            np.asarray(df.index),
-            '.'.join([prefix_filepath, "index", suffix_filepath])
-        )
-        self.to_blp(
-            np.asarray(df.columns).astype('U'),
-            '.'.join([prefix_filepath, "columns", suffix_filepath])
-        )
 
 
 class LocationHandlerBase(DataFrameHandlerBase):
