@@ -1,4 +1,5 @@
 # Built-in modules
+from glob import glob
 import re
 # Third-party modules
 import numpy as np
@@ -74,6 +75,38 @@ class DatasetHandler(DataFrameHandlerBase, BloscpackMixin):
             np.asarray(df.columns).astype('U'),
             '.'.join([prefix_filepath, "columns", suffix_filepath])
         )
+
+    @staticmethod
+    def gen_filepath_prefix_suffix_nested_list(regex_values_filepath):
+        filepath_prefix_suffix_nested_list = list()
+        pattern = re.compile("\.values\.")
+
+        for filepath in glob(regex_values_filepath):
+            match = pattern.search(filepath)
+            filepath_prefix_suffix_nested_list.append(
+                (filepath[:match.start()], filepath[match.end():])
+            )
+
+        return filepath_prefix_suffix_nested_list
+
+    def retrieve_data(self, filepath_prefix_suffix_nested_list):
+        if len(filepath_prefix_suffix_nested_list) < 1:
+            raise ValueError("Empty ?")
+
+        df_ret = self.read_blp_as_df(
+            filepath_prefix_suffix_nested_list[0][0],
+            filepath_prefix_suffix_nested_list[0][1]
+        )
+
+        if len(filepath_prefix_suffix_nested_list) > 1:
+            for filepath_prefix_suffix in filepath_prefix_suffix_nested_list[1:]:
+                df_ret = df_ret.append(
+                    self.read_blp_as_df(filepath_prefix_suffix[0],
+                                        filepath_prefix_suffix[1]),
+                    verify_integrity=True
+                )
+
+        return df_ret
 
 
 if __name__ == '__main__':
