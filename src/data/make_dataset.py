@@ -241,9 +241,9 @@ def main(input_dirpath,
 
         logger.info('#6: load train data segment to the memory @ {l} !'.format(l=location))
 
-        for n_iter, (train_index, _) in enumerate(kf_train.split(df_train_segment)):
+        for n_iter, (_, extract_index) in enumerate(kf_train.split(df_train_segment)):
             maker.to_blp_via_df(
-                df_train_segment.iloc[train_index, :],
+                df_train_segment.iloc[extract_index, :],
                 path.join(maker.PROCESSED_DATA_BASEPATH,
                           "dataset.amd_sfc_forecast_kwh.train{i}".format(i=n_iter)),
                 "{l}.blp".format(l=location)
@@ -261,9 +261,9 @@ def main(input_dirpath,
 
         logger.info('#6: load test data segment to the memory @ {l} !'.format(l=location))
 
-        for n_iter, (_, test_index) in enumerate(kf_test.split(df_test_segment)):
+        for n_iter, (_, extract_index) in enumerate(kf_test.split(df_test_segment)):
             maker.to_blp_via_df(
-                df_test_segment.iloc[test_index, :],
+                df_test_segment.iloc[extract_index, :],
                 path.join(maker.PROCESSED_DATA_BASEPATH,
                           "dataset.amd_sfc_forecast_kwh.test{i}".format(i=n_iter)),
                 "{l}.blp".format(l=location)

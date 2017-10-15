@@ -78,16 +78,16 @@ class DatasetHandler(DataFrameHandlerBase, BloscpackMixin):
 
     def gen_filepath_prefix_suffix_nested_list(self, location_name):
         filepath_prefix_suffix_nested_list = list()
-        pattern = re.compile("_data\.values\.")
+        pattern = re.compile("\.values\.")
         regex_values_filepath = self.path.join(
             self.INTERIM_DATA_BASEPATH,
-            "*.values.{l}.data#[1-9]".format(l=location_name)
+            "*_data.values.{l}.data#[1-9]".format(l=location_name)
         )
 
         for filepath in glob(regex_values_filepath):
             match = pattern.search(filepath)
             filepath_prefix_suffix_nested_list.append(
-                ("{p}_data".format(p=filepath[:match.start()]), filepath[match.end():])
+                (filepath[:match.start()], filepath[match.end():])
             )
 
         return filepath_prefix_suffix_nested_list
