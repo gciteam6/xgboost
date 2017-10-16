@@ -135,8 +135,10 @@ def main():
             else:
                 df_data.drop(drop_index, axis=0, inplace=True)
 
+        logger.info('#2: remove the specified index from df_X of {l} !'.format(l=location))
+
         df_X, df_y = maker.separate_X_y(df_data)
-        df_X = df_X.replace("nan", lambda dummy: np.nan)
+        df_X.replace("nan", np.nan, inplace=True)
 
         logger.info('#2: cast string nan to np.nan in df_X of {l} !'.format(l=location))
 
@@ -182,7 +184,7 @@ def main():
 
     #
     # resample to every 30 min
-    #
+    #x
     for location in LOCATIONS:
         df_every_10 = maker.read_blp_as_df(
             path.join(maker.INTERIM_DATA_BASEPATH, "dataset.data"),
@@ -190,6 +192,10 @@ def main():
         )
 
         logger.info('#3: load dataset to the memory @ {l} !'.format(l=location))
+
+        df_every_10 = df_every_10.apply(pd.to_numeric, errors="coerce")
+
+        logger.info('#3: cast string to numeric in dataset of {l} !'.format(l=location))
 
         df_X, df_y = maker.separate_X_y(df_every_10)
         df_X = df_X.resample(**KWARGS_RESAMPLING).mean()
