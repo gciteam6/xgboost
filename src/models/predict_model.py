@@ -15,8 +15,12 @@ import bloscpack as bp
 # Hand-made modules
 from src.models.xgb import MyXGBRegressor
 
-TRAIN_FILEPATH_PREFIX = path.join(PROJECT_ROOT_DIRPATH, "data/processed/dataset.test_X")
+TRAIN_FILEPATH_PREFIX = path.join(PROJECT_ROOT_DIRPATH, "data/processed/dataset.train_X_y")
 TRAIN_FILEPATH_EXTENTION = "blp"
+TEST_FILEPATH_PREFIX = path.join(PROJECT_ROOT_DIRPATH, "data/processed/dataset.test_X")
+TEST_FILEPATH_EXTENSION = "blp"
+PREDICT_FILENAME_PREFIX = "predict"
+PREDICT_FILENAME_EXTENSION = "blp"
 XGB_PARAMS = {
     "n_estimators": 500,
     "nthread": -1,
@@ -29,22 +33,22 @@ LOCATIONS = (
 )
 
 
-def get_test_X(train_filepath_prefix, train_filepath_suffix, fold_id=None):
-    func_gen_filepath = lambda file_attr: '.'.join([train_filepath_prefix,
+def get_test_X(filepath_prefix, filepath_suffix, fold_id=None):
+    func_gen_filepath = lambda file_attr: '.'.join([filepath_prefix,
                                                     file_attr,
-                                                    train_filepath_suffix])
+                                                    filepath_suffix])
     values = bp.unpack_ndarray_file(func_gen_filepath("values"))
     if isinstance(fold_id, int):
         whole_index = bp.unpack_ndarray_file(func_gen_filepath("index"))
         columns = bp.unpack_ndarray_file(func_gen_filepath("columns"))
-        df_train = pd.DataFrame(values, index=pd.DatetimeIndex(whole_index), columns=columns)
+        df = pd.DataFrame(values, index=pd.DatetimeIndex(whole_index), columns=columns)
 
-        removal_index = pd.DatetimeIndex(
+        extract_index = pd.DatetimeIndex(
             bp.unpack_ndarray_file(func_gen_filepath("crossval{f}".format(f=fold_id)))
         )
-        df_train.drop(removal_index, axis=0, inplace=True)
+        df = df.loc[extract_index, :]
 
-        return df_train.values.astype(float)
+        return df.iloc[:, :-1].values.astype(float)
     else:
         return values.astype(float)
 
@@ -56,7 +60,7 @@ def get_test_X(train_filepath_prefix, train_filepath_suffix, fold_id=None):
 @click.option("--fold-id", "-f", type=int)
 def main(location, predict_target, fold_id):
     logger = logging.getLogger(__name__)
-    logger.info('#0: train models')
+    logger.info('#0: run prediction ')
 
     #
     # predict by the serialized model
@@ -72,8 +76,8 @@ def main(location, predict_target, fold_id):
 
             m = MyXGBRegressor(model_name="test.{l}".format(l=place), params=XGB_PARAMS)
 
-            X_test = get_test_X(TRAIN_FILEPATH_PREFIX,
-                                place + '.' + TRAIN_FILEPATH_EXTENTION,
+            X_test = get_test_X(TEST_FILEPATH_PREFIX,
+                                place + '.' + TEST_FILEPATH_EXTENSION,
                                 fold_id=None)
         elif predict_target == "crossval":
             if fold_id is None:
@@ -96,9 +100,10 @@ def main(location, predict_target, fold_id):
 
         m.to_blp(
             y_pred,
-            path.join([m.MODELS_SERIALIZING_BASEPATH,
-                       '.'.join(["predict", m.model_name, "{l}.blp".format(l=place)])
-                       ])
+            path.join(
+                m.MODELS_SERIALIZING_BASEPATH,
+                 '.'.join([PREDICT_FILENAME_PREFIX, m.model_name, PREDICT_FILENAME_EXTENSION])
+            )
         )
 
         logger.info('#2: a prediction result is saved @ {l} !'.format(l=place))
