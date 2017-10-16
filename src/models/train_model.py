@@ -58,12 +58,9 @@ def main(location, predict_target, fold_id):
     logger = logging.getLogger(__name__)
     logger.info('#0: train models')
 
-    # TODO: -tがCLAで与えられたとき, 全データでモデル構築を行う
-    # TODO: python train_model.py -t -> models/xgb/fit_model.test.location.pkl
-
-    # TODO: -vがCLAで与えられたとき, -fの数で交差検証サブセットを取得する
-    # TODO: python train_model.py -v -f 0 -> models/xgb/fit_model.fold0.location.pkl
-
+    #
+    # fit the model
+    #
     if location is None:
         location_list = LOCATIONS
     else:
