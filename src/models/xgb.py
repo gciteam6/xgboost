@@ -5,15 +5,16 @@ from .base import BloscpackMixin, MyEstimatorBase, PickleMixin
 
 MACHINE_LEARNING_TECHNIQUE_NAME = "xgb"
 PICKLE_EXTENSION = "pkl"
-SERIALIZE_FILEPATH_PREFIX = "fit_model"
+SERIALIZE_FILENAME_PREFIX = "fit_model"
 
 
 class MyXGBRegressor(MyEstimatorBase, BloscpackMixin, PickleMixin):
     def __init__(self, model_name: str, params: dict):
         super().__init__(model_name, params)
-        self.MACHINE_LEARNING_TECHNIQUE_NAME = MACHINE_LEARNING_TECHNIQUE_NAME
-        self.SERIALIZE_FILEPATH_PREFIX = SERIALIZE_FILEPATH_PREFIX
         self.regr = self.get_model_instance()
+        self.MODELS_SERIALIZING_BASEPATH = self.path.join(self.MODELS_SERIALIZING_BASEPATH,
+                                                          MACHINE_LEARNING_TECHNIQUE_NAME)
+        self.SERIALIZE_FILENAME_PREFIX = SERIALIZE_FILENAME_PREFIX
 
     def get_model_instance(self):
         return XGBRegressor(**self.params)
@@ -24,9 +25,7 @@ class MyXGBRegressor(MyEstimatorBase, BloscpackMixin, PickleMixin):
         pkl_path = self.gen_abspath(
             self.path.join(
                 self.MODELS_SERIALIZING_BASEPATH,
-                self.MACHINE_LEARNING_TECHNIQUE_NAME,
-                self.gen_serialize_filepath(self.SERIALIZE_FILEPATH_PREFIX,
-                                            PICKLE_EXTENSION)
+                self.gen_serialize_filepath(self.SERIALIZE_FILENAME_PREFIX, PICKLE_EXTENSION)
             )
         )
         self.to_pkl(fit_model, pkl_path)
@@ -37,11 +36,7 @@ class MyXGBRegressor(MyEstimatorBase, BloscpackMixin, PickleMixin):
         fit_model = self.read_pkl(
             self.path.join(
                 self.MODELS_SERIALIZING_BASEPATH,
-                MACHINE_LEARNING_TECHNIQUE_NAME,
-                self.gen_serialize_filepath(
-                    "fit_model",
-                    PICKLE_EXTENSION
-                )
+                self.gen_serialize_filepath(self.SERIALIZE_FILENAME_PREFIX, PICKLE_EXTENSION)
             )
         )
 
