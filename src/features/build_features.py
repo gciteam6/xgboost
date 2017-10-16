@@ -220,6 +220,7 @@ def main():
         gc.collect()
 
         _, df_test = maker.separate_train_test(df_every_30)
+        df_test, _ = maker.separate_X_y(df_test)
         maker.to_blp_via_df(
             df_test,
             path.join(maker.PROCESSED_DATA_BASEPATH, "dataset.test_X"),
