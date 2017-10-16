@@ -67,7 +67,7 @@ class AmedasHandler(LocationHandlerBase):
                 )
 
                 df_ret = df_ret.merge(
-                    df_temp, **self.KWARGS_MERGE_TWO_DATAFRAME
+                    df_temp, **self.KWARGS_OUTER_MERGE
                 )
 
         return df_ret
