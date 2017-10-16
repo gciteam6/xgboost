@@ -12,6 +12,7 @@ pandas
 bloscpack
 scikit-learn
 scikit-image
+xgboost
 matplotlib
 seaborn
 pyyaml
