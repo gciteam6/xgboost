@@ -20,19 +20,16 @@ class MyXGBRegressor(MyEstimatorBase, BloscpackMixin, PickleMixin):
 
     def fit(self, X, y):
         fit_model = self.regr.fit(X, y, eval_metric="mae")
-        self.to_pkl(
-            fit_model,
-            self.gen_abspath(
-                self.path.join(
-                    self.MODELS_SERIALIZING_BASEPATH,
-                    self.MACHINE_LEARNING_TECHNIQUE_NAME,
-                    self.gen_serialize_filepath(
-                        self.SERIALIZE_FILEPATH_PREFIX,
-                        PICKLE_EXTENSION
-                    )
-                )
+
+        pkl_path = self.gen_abspath(
+            self.path.join(
+                self.MODELS_SERIALIZING_BASEPATH,
+                self.MACHINE_LEARNING_TECHNIQUE_NAME,
+                self.gen_serialize_filepath(self.SERIALIZE_FILEPATH_PREFIX,
+                                            PICKLE_EXTENSION)
             )
         )
+        self.to_pkl(fit_model, pkl_path)
 
         return fit_model
 
@@ -53,5 +50,3 @@ class MyXGBRegressor(MyEstimatorBase, BloscpackMixin, PickleMixin):
 
 if __name__ == '__main__':
     print("My eXtra Gradient Boosting trees !")
-
-
