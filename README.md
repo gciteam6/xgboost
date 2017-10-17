@@ -66,15 +66,16 @@ $ python src/features/build_features.py
 ```
 + __入力__: src/data/make_dataset.pyの出力
 + __出力__: トレーニング/テストデータセット
-    - data/processed/に生成される
+    - data/processed/に生成する
     - 保存データの例(pandas.DataFrameの分解物, ↓3つで1セット)
-        * dataset.train_X_y.columns.ougishima.blp
-        * dataset.train_X_y.index.ougishima.blp
-        * dataset.train_X_y.values.ougishima.blp
+        * data/processed/dataset.train_X_y.columns.ougishima.blp
+        * data/processed/dataset.train_X_y.index.ougishima.blp
+        * data/processed/dataset.train_X_y.values.ougishima.blp
 + 中間生成物
+    - data/interim/に生成する
     - 欠損処理, 特徴量生成過程の中間ファイル(例↓)
-        * dataset.data.train0.values.ougishima.features#1
-        * dataset.data.values.ougishima.features#2
+        * data/interim/dataset.data.train0.values.ougishima.features#1
+        * data/interim/dataset.data.values.ougishima.features#2
 + 注意
     - メモリが死にやすい
         * bloscpackの操作でよく死ぬ
@@ -92,30 +93,41 @@ XGBoostによるkwh予測モデル作成
 ------------
 + コマンドとしてやること
 ```bash
-$ python src/models/separate_validation_index.py -n 5 -l ougishima  # crossvalをどこまで分割するかを指定できる
-$ python src/features/build_features.py -v -f 0 -l ougishima  # crossvalデータ0番目を予測するためのモデルを作成する(すなわち全てのトレーニングサンプルを使わない)
-$ python src/features/build_features.py -v -f 1 -l ougishima
-$ python src/features/build_features.py -v -f 2 -l ougishima
-$ python src/features/build_features.py -v -f 3 -l ougishima
-$ python src/features/build_features.py -v -f 4 -l ougishima
-$ python src/features/build_features.py -t -l ougishima  # トレーニングサンプルすべてを使ってモデルを作成する
-# `-l`で発電所を指定しない場合, 浮島・扇島・米倉山すべてに対し同じ操作を行う
-$ python src/features/build_features.py -t
+$ python src/models/separate_validation_index.py -n 5  # cross-validationでトレーニングデータを何分割するか指定する
+$ python src/models/train_model.py -v -f 0  # cross-validationのデータ0-fold番目を予測するためのモデルを作成する(=全てのトレーニングサンプルを使わない)
+$ python src/models/predict_model.py -v -f 0  # cross-validationのデータ0-fold番目を予測する
+$ python src/models/train_model.py -t  # トレーニングサンプルすべてを使ってモデルを作成する
+
+# `-l`で発電所を指定できる. その場合, `ukishima`・`ougishima`・`yonekurayama`のいずれかを続ける
+$ python src/models/train_model.py -t -l ougishima
+$ python src/models/predict_model.py -t -l ougishima
 ```
-+ __入力__:
++ __入力__: src/features/build_features.pyの出力
 + __出力__:
+    - pickleでserializeされたXGBoostモデル(例↓)
+        * models/xgb/fit_model.test.ougishima.pkl
+        * models/xgb/fit_model.crossval0.ougishima.pkl
+    - 予測値, numpy.ndarrayをbloscpackで保存したデータ(例↓)
+        * models/xgb/predict.test.ougishima.pkl
+        * models/xgb/predict.crossval0.ougishima.blp
 + 中間生成物
+    - Cross-validation時のfolding indexをまとめたファイル(例↓)
+        * data/processed/dataset.train_X_y.crossval0.ougishima.blp
+        * data/processed/dataset.train_X_y.crossval1.ougishima.blp
 + 注意
+    - (Cross-validationでない)test用のデータが欠損している
+        * データセットの時刻をずらす操作を行っているため
+        * まともに動かそうとするならば, amedas, surfaceの2017-04-01 00:10:00から2017-04-02 04:00:00までのデータが必要
 + コマンドがやっていること
+    - ファイル名が体現している
 + 編集ログ
     - 2017/10/17執筆
-# TODO: ここ編集する
 
 
 次やること
 ------------
-+
-# TODO: ここ編集する
++ XGBoostの結果をまとめる
+
 
 Project Organization
 ------------
