@@ -34,19 +34,22 @@ def get_train_X_y(train_filepath_prefix, train_filepath_suffix, fold_id=None):
                                                     file_attr,
                                                     train_filepath_suffix])
     values = bp.unpack_ndarray_file(func_gen_filepath("values"))
-    if isinstance(fold_id, int):
-        whole_index = bp.unpack_ndarray_file(func_gen_filepath("index"))
-        columns = bp.unpack_ndarray_file(func_gen_filepath("columns"))
-        df_train = pd.DataFrame(values, index=pd.DatetimeIndex(whole_index), columns=columns)
+    whole_index = bp.unpack_ndarray_file(func_gen_filepath("index"))
+    columns = bp.unpack_ndarray_file(func_gen_filepath("columns"))
+    df_train = pd.DataFrame(
+        values, index=pd.DatetimeIndex(whole_index), columns=columns
+    ).apply(pd.to_numeric, errors="coerce")
 
+    if isinstance(fold_id, int):
         removal_index = pd.DatetimeIndex(
             bp.unpack_ndarray_file(func_gen_filepath("crossval{f}".format(f=fold_id)))
         )
+
         df_train.drop(removal_index, axis=0, inplace=True)
 
-        return df_train.values.astype(float)
-    else:
-        return values.astype(float)
+    df_train.dropna(axis=0, how="any", inplace=True)
+
+    return df_train.values
 
 
 @click.command()
