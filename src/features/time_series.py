@@ -42,8 +42,8 @@ class TimeSeriesReshaper(DataFrameHandlerBase):
         self.REGEX_SHIFT_COL_NAME_PREFIXES = REGEX_SHIFT_COL_NAME_PREFIXES
 
     @staticmethod
-    def get_shift_indexes(df, freq, shift_col_name_list):
-        return df[shift_col_name_list].shift(freq=freq, axis=0)
+    def get_shifted_dataframe(df, freq):
+        return df.shift(freq=freq, axis=0)
 
     @staticmethod
     def get_regex_matched_col_name(col_name_list, regex_name_prefix_list):
