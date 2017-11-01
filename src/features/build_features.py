@@ -67,7 +67,7 @@ def main():
     for location in LOCATIONS:
         for setting in SETTINGS:
             df_data = maker.read_blp_as_df(
-                path.join(maker.PROCESSED_DATA_BASEPATH, "dataset.amd_sfc_forecast_kwh.{s}".format(s=setting)),
+                path.join(maker.INTERIM_DATA_BASEPATH, "dataset.amd_sfc_forecast_kwh.{s}".format(s=setting)),
                 "{l}.blp".format(l=location)
             )
 

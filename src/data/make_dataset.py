@@ -244,7 +244,7 @@ def main(input_dirpath,
         for n_iter, (_, extract_index) in enumerate(kf_train.split(df_train_segment)):
             maker.to_blp_via_df(
                 df_train_segment.iloc[extract_index, :],
-                path.join(maker.PROCESSED_DATA_BASEPATH,
+                path.join(maker.INTERIM_DATA_BASEPATH,
                           "dataset.amd_sfc_forecast_kwh.train{i}".format(i=n_iter)),
                 "{l}.blp".format(l=location)
                 )
@@ -264,7 +264,7 @@ def main(input_dirpath,
         for n_iter, (_, extract_index) in enumerate(kf_test.split(df_test_segment)):
             maker.to_blp_via_df(
                 df_test_segment.iloc[extract_index, :],
-                path.join(maker.PROCESSED_DATA_BASEPATH,
+                path.join(maker.INTERIM_DATA_BASEPATH,
                           "dataset.amd_sfc_forecast_kwh.test{i}".format(i=n_iter)),
                 "{l}.blp".format(l=location)
                 )
