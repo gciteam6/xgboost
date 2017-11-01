@@ -19,7 +19,7 @@ from src.features.dummy import DummyFeatureHandler
 from src.features.time_series import TimeSeriesReshaper
 
 NAN_NUMBER_THRESHOLD = 10000
-SHIFT_INDEX_OFFSETS_HOUR = -28
+SHIFT_INDEX_OFFSETS_HOUR = 28
 
 OBJECTIVE_LABEL_NAMES = ["kwh", ]
 TRAIN_SAMPLE_SETTINGS = ["train{i}".format(i=n_iter) for n_iter in range(8)]
