@@ -16,35 +16,43 @@ import bloscpack as bp
 from src.models.xgb import MyXGBRegressor
 
 TRAIN_FILEPATH_PREFIX = path.join(PROJECT_ROOT_DIRPATH, "data/processed/dataset.train_X_y")
-TRAIN_FILEPATH_EXTENTION = "blp"
-XGB_PARAMS = {
-    "n_estimators": 500,
-    "nthread": -1,
-    "seed": 1
-}
+TRAIN_FILEPATH_EXTENTION = "tsv"
+
 LOCATIONS = (
     "ukishima",
     "ougishima",
     "yonekurayama"
 )
+KWARGS_READ_CSV = {
+    "sep": "\t",
+    "header": 0,
+    "parse_dates": [0],
+    "index_col": 0
+}
+
+
+def gen_params_dict(n_estimators, max_depth, learning_rate,
+                    penal_lambda, penal_alpha,
+                    subsample, colsample_bytree, seed):
+    return {"n_estimators": n_estimators,
+            "max_depth": max_depth,
+            "learning_rate": learning_rate,
+            "lambda": penal_lambda,
+            "alpha": penal_alpha,
+            "subsample": subsample,
+            "colsample_bytree": colsample_bytree,
+            "seed": seed}
 
 
 def get_train_X_y(train_filepath_prefix, train_filepath_suffix, fold_id=None):
-    func_gen_filepath = lambda file_attr: '.'.join([train_filepath_prefix,
-                                                    file_attr,
-                                                    train_filepath_suffix])
-    values = bp.unpack_ndarray_file(func_gen_filepath("values"))
-    whole_index = bp.unpack_ndarray_file(func_gen_filepath("index"))
-    columns = bp.unpack_ndarray_file(func_gen_filepath("columns"))
-    df_train = pd.DataFrame(
-        values, index=pd.DatetimeIndex(whole_index), columns=columns
-    ).apply(pd.to_numeric, errors="coerce")
+    df_train = pd.read_csv('.'.join([train_filepath_prefix, train_filepath_suffix]),
+                           **KWARGS_READ_CSV)
 
     if isinstance(fold_id, int):
-        removal_index = pd.DatetimeIndex(
-            bp.unpack_ndarray_file(func_gen_filepath("crossval{f}".format(f=fold_id)))
-        )
-
+        crossval_index_filename = '.'.join([train_filepath_prefix,
+                                            "crossval{f}".format(f=fold_id),
+                                            train_filepath_suffix])
+        removal_index = pd.DatetimeIndex(bp.unpack_ndarray_file(crossval_index_filename))
         df_train.drop(removal_index, axis=0, inplace=True)
 
     df_train.dropna(axis=0, how="any", inplace=True)

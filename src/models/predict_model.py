@@ -16,41 +16,57 @@ import bloscpack as bp
 from src.models.xgb import MyXGBRegressor
 
 TRAIN_FILEPATH_PREFIX = path.join(PROJECT_ROOT_DIRPATH, "data/processed/dataset.train_X_y")
-TRAIN_FILEPATH_EXTENTION = "blp"
+TRAIN_FILEPATH_EXTENTION = "tsv"
 TEST_FILEPATH_PREFIX = path.join(PROJECT_ROOT_DIRPATH, "data/processed/dataset.test_X")
-TEST_FILEPATH_EXTENSION = "blp"
+TEST_FILEPATH_EXTENSION = "tsv"
 PREDICT_FILENAME_PREFIX = "predict"
-PREDICT_FILENAME_EXTENSION = "blp"
-XGB_PARAMS = {
-    "n_estimators": 500,
-    "nthread": -1,
-    "seed": 1
-}
+PREDICT_FILENAME_EXTENSION = "tsv"
+
 LOCATIONS = (
     "ukishima",
     "ougishima",
     "yonekurayama"
 )
+KWARGS_READ_CSV = {
+    "sep": "\t",
+    "header": 0,
+    "parse_dates": [0],
+    "index_col": 0
+}
+KWARGS_TO_CSV = {
+    "sep": "\t"
+}
+
+
+def gen_params_dict(n_estimators, max_depth, learning_rate,
+                    penal_lambda, penal_alpha,
+                    subsample, colsample_bytree, seed):
+    return {"n_estimators": n_estimators,
+            "max_depth": max_depth,
+            "learning_rate": learning_rate,
+            "lambda": penal_lambda,
+            "alpha": penal_alpha,
+            "subsample": subsample,
+            "colsample_bytree": colsample_bytree,
+            "seed": seed}
 
 
 def get_test_X(filepath_prefix, filepath_suffix, fold_id=None):
     func_gen_filepath = lambda file_attr: '.'.join([filepath_prefix,
                                                     file_attr,
                                                     filepath_suffix])
-    values = bp.unpack_ndarray_file(func_gen_filepath("values"))
-    if isinstance(fold_id, int):
-        whole_index = bp.unpack_ndarray_file(func_gen_filepath("index"))
-        columns = bp.unpack_ndarray_file(func_gen_filepath("columns"))
-        df = pd.DataFrame(values, index=pd.DatetimeIndex(whole_index), columns=columns)
+    df = pd.read_csv('.'.join([filepath_prefix, filepath_suffix]), **KWARGS_READ_CSV)
 
-        extract_index = pd.DatetimeIndex(
-            bp.unpack_ndarray_file(func_gen_filepath("crossval{f}".format(f=fold_id)))
-        )
+    if isinstance(fold_id, int):
+        crossval_index_filename = '.'.join([filepath_prefix,
+                                            "crossval{f}".format(f=fold_id),
+                                            filepath_suffix])
+        extract_index = pd.DatetimeIndex(bp.unpack_ndarray_file(func_gen_filepath(crossval_index_filename)))
         df = df.loc[extract_index, :]
 
-        return df.iloc[:, :-1].values.astype(float)
+        return df.iloc[:, :-1].values, df.index
     else:
-        return values.astype(float)
+        return df.values, df.index
 
 
 @click.command()

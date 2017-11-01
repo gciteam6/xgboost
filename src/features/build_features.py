@@ -209,10 +209,10 @@ def main():
         gc.collect()
 
         df_train, _ = maker.separate_train_test(df_every_30)
-        maker.to_blp_via_df(
+        maker.to_tsv(
             df_train,
-            path.join(maker.PROCESSED_DATA_BASEPATH, "dataset.train_X_y"),
-            "{l}.blp".format(l=location)
+            path.join(maker.PROCESSED_DATA_BASEPATH,
+                      "dataset.train_X_y.{l}.tsv".format(l=location))
         )
 
         logger.info('#3: save train dataset as a file @ {l} !'.format(l=location))
@@ -221,10 +221,10 @@ def main():
 
         _, df_test = maker.separate_train_test(df_every_30)
         df_test, _ = maker.separate_X_y(df_test)
-        maker.to_blp_via_df(
+        maker.to_tsv(
             df_test,
-            path.join(maker.PROCESSED_DATA_BASEPATH, "dataset.test_X"),
-            "{l}.blp".format(l=location)
+            path.join(maker.PROCESSED_DATA_BASEPATH,
+                      "dataset.test_X.{l}.tsv".format(l=location))
         )
 
         logger.info('#3: save test dataset as a file @ {l} !'.format(l=location))
