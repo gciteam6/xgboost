@@ -32,26 +32,26 @@ KWARGS_READ_CSV = {
 
 
 def gen_params_dict(n_estimators, max_depth, learning_rate,
-                    penal_lambda, penal_alpha,
+                    reg_lambda, reg_alpha,
                     subsample, colsample_bytree, seed):
     return {"n_estimators": n_estimators,
             "max_depth": max_depth,
             "learning_rate": learning_rate,
-            "lambda": penal_lambda,
-            "alpha": penal_alpha,
+            "reg_lambda": reg_lambda,
+            "reg_alpha": reg_alpha,
             "subsample": subsample,
             "colsample_bytree": colsample_bytree,
             "seed": seed}
 
 
-def get_train_X_y(train_filepath_prefix, train_filepath_suffix, fold_id=None):
-    df_train = pd.read_csv('.'.join([train_filepath_prefix, train_filepath_suffix]),
+def get_train_X_y(train_filepath_prefix, location, fold_id=None):
+    df_train = pd.read_csv('.'.join([train_filepath_prefix, location + ".tsv"]),
                            **KWARGS_READ_CSV)
 
     if isinstance(fold_id, int):
         crossval_index_filename = '.'.join([train_filepath_prefix,
-                                            "crossval{f}".format(f=fold_id),
-                                            train_filepath_suffix])
+                                            "index.crossval{f}".format(f=fold_id),
+                                            location + ".blp"])
         removal_index = pd.DatetimeIndex(bp.unpack_ndarray_file(crossval_index_filename))
         df_train.drop(removal_index, axis=0, inplace=True)
 
@@ -65,7 +65,18 @@ def get_train_X_y(train_filepath_prefix, train_filepath_suffix, fold_id=None):
 @click.option("-v", "predict_target", flag_value="crossval")
 @click.option("--location", "-l", type=str, default=None)
 @click.option("--fold-id", "-f", type=int)
-def main(location, predict_target, fold_id):
+@click.option("--n_estimators", type=int, default=1000)
+@click.option("--max_depth", type=int, default=3)
+@click.option("--learning_rate", type=float, default=0.1)
+@click.option("--reg_lambda", type=float, default=1.0)
+@click.option("--reg_alpha", type=float, default=0.0)
+@click.option("--subsample", type=float, default=0.8)
+@click.option("--colsample_bytree", type=float, default=0.8)
+@click.option("--seed", type=int, default=0)
+def main(location, predict_target, fold_id,
+         n_estimators, max_depth, learning_rate,
+         reg_lambda, reg_alpha,
+         subsample, colsample_bytree, seed):
     logger = logging.getLogger(__name__)
     logger.info('#0: train models')
 
@@ -77,24 +88,27 @@ def main(location, predict_target, fold_id):
     else:
         location_list = [location, ]
 
+    XGB_PARAMS = gen_params_dict(n_estimators, max_depth, learning_rate,
+                                 reg_lambda, reg_alpha,
+                                 subsample, colsample_bytree, seed)
+    param_str = str()
+    for (key, value) in XGB_PARAMS.items():
+        param_str += "{k}_{v}.".format(k=key, v=value)
+
     for place in location_list:
         if predict_target == "test":
             logger.info('#1: fit the model with all training dataset @ {l} !'.format(l=place))
 
-            train_X_y = get_train_X_y(TRAIN_FILEPATH_PREFIX,
-                                      place + '.' + TRAIN_FILEPATH_EXTENTION,
-                                      fold_id=None)
-            m = MyXGBRegressor(model_name="test.{l}".format(l=place), params=XGB_PARAMS)
+            train_X_y = get_train_X_y(TRAIN_FILEPATH_PREFIX, place, fold_id=None)
+            m = MyXGBRegressor(model_name=param_str + "test.{l}".format(l=place), params=XGB_PARAMS)
         elif predict_target == "crossval":
             if fold_id is None:
                 raise ValueError("Specify validation dataset number as an integer !")
 
             logger.info('#1: fit the model without fold-id: {f} @ {l} !'.format(f=fold_id, l=place))
 
-            train_X_y = get_train_X_y(TRAIN_FILEPATH_PREFIX,
-                                      place + '.' + TRAIN_FILEPATH_EXTENTION,
-                                      fold_id=fold_id)
-            m = MyXGBRegressor(model_name="crossval{i}.{l}".format(i=fold_id, l=place), params=XGB_PARAMS)
+            train_X_y = get_train_X_y(TRAIN_FILEPATH_PREFIX, place, fold_id=fold_id)
+            m = MyXGBRegressor(model_name=param_str + "crossval{i}.{l}".format(i=fold_id, l=place), params=XGB_PARAMS)
         else:
             raise ValueError("Invalid flag, '-t' or '-v' is permitted !")
 

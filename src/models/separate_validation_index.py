@@ -46,11 +46,8 @@ def main(location, n_splits):
         train_filepath_prefix = path.join(
             PROJECT_ROOT_DIRPATH, "data/processed/dataset.train_X_y"
         )
-        train_filepath_suffix = "{l}.blp".format(l=place)
         splitter.separate_and_serialize_validation_index(
-            train_filepath_prefix,
-            train_filepath_suffix,
-            n_splits
+            train_filepath_prefix, place, n_splits
         )
 
         logger.info('#1: get cross-validation test index  @ {l}'.format(l=place))
