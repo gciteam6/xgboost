@@ -1,0 +1,45 @@
+#!/bin/sh
+
+python src/models/separate_validation_index.py -n 10
+
+# L2-regularization
+for max_depth in 3 4 5 6; do
+  for learning_rate in 0.05 0.1 0.2 0.3 0.5; do
+    for subsample in 0.67 0.8 1.0; do
+      for colsample_bytree in 0.8 0.9 1.0; do
+        for seed in 0 1 2 3 4; do
+
+          python src/models/train_model.py -t --max_depth $max_depth --learning_rate $learning_rate --subsample $subsample --colsample_bytree $colsample_bytree --seed $seed
+          python src/models/predict_model.py -t --max_depth $max_depth --learning_rate $learning_rate --subsample $subsample --colsample_bytree $colsample_bytree --seed $seed
+
+          for n_fold in 0 1 2 3 4 5 6 7 8 9; do
+            python src/models/train_model.py -v -f $n_fold --max_depth $max_depth --learning_rate $learning_rate --subsample $subsample --colsample_bytree $colsample_bytree --seed $seed
+            python src/models/predict_model.py -v -f $n_fold --max_depth $max_depth --learning_rate $learning_rate --subsample $subsample --colsample_bytree $colsample_bytree --seed $seed
+          done
+
+        done
+      done
+    done
+  done
+done
+
+# L1-regularization
+for max_depth in 3 4 5 6; do
+  for learning_rate in 0.05 0.1 0.2 0.3 0.5; do
+    for subsample in 0.67 0.8 1.0; do
+      for colsample_bytree in 0.8 0.9 1.0; do
+        for seed in 0 1 2 3 4; do
+
+          python src/models/train_models.py -t --max_depth $max_depth --learning_rate $learning_rate --subsample $subsample --colsample_bytree $colsample_bytree --seed $seed --reg_lambda 0.0 --reg_alpha 1.0
+          python src/models/predict_models.py -t --max_depth $max_depth --learning_rate $learning_rate --subsample $subsample --colsample_bytree $colsample_bytree --seed $seed --reg_lambda 0.0 --reg_alpha 1.0
+
+          for n_fold in 0 1 2 3 4 5 6 7 8 9; do
+            python src/models/train_models.py -v -f $n_fold --max_depth $max_depth --learning_rate $learning_rate --subsample $subsample --colsample_bytree $colsample_bytree --seed $seed --penal_lambda 0.0 --penal_alpha 1.0
+            python src/models/predict_models.py -v -f $n_fold --max_depth $max_depth --learning_rate $learning_rate --subsample $subsample --colsample_bytree $colsample_bytree --seed $seed --penal_lambda 0.0 --penal_alpha 1.0
+          done
+
+        done
+      done
+    done
+  done
+done
