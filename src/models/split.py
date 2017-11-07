@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import KFold
 # Hand-made modules
-from .base import BloscpackMixin
+from .base import PathHandlerBase, BloscpackMixin
 
 KWARGS_READ_CSV = {
     "sep": "\t",
@@ -11,6 +11,12 @@ KWARGS_READ_CSV = {
     "parse_dates": [0],
     "index_col": 0
 }
+KWARGS_TO_CSV = {
+    "sep": "\t"
+}
+OBJECTIVE_LABEL_NAMES = ["kwh", ]
+Y_TRUE_FILEPATH_PREFIX = "train_y"
+Y_TRUE_FILEPATH_SUFFIX = "tsv"
 
 
 class ValidationSplitHandler(BloscpackMixin):
@@ -21,9 +27,9 @@ class ValidationSplitHandler(BloscpackMixin):
                                                 train_filepath_prefix,
                                                 location,
                                                 n_splits):
-        train_dataframe_filepath = '.'.join([train_filepath_prefix,
-                                             location + ".tsv"])
-        df = pd.read_csv(train_dataframe_filepath, **KWARGS_READ_CSV)
+        df = pd.read_csv('.'.join([train_filepath_prefix,
+                                   "{l}.tsv".format(l=location)]),
+                         **KWARGS_READ_CSV)
         train_index = df.index
 
         for n_iter, (_, test_index) in enumerate(KFold(n_splits=n_splits).split(train_index)):
