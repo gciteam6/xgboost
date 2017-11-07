@@ -100,6 +100,35 @@ class MyEstimatorBase(PathHandlerBase):
         return self
 
 
+def safe_indexing(X, index):
+    """From 'safe_indexing' in sklearn.utils.base"""
+    if hasattr(X, "iloc"):
+        # Work-around for indexing with read-only index in pandas
+        index = index if index.flags.writeable else index.copy()
+        # Pandas Dataframes and Series
+        try:
+            return X.iloc[index]
+        except ValueError:
+            return X.copy().iloc[index]
+    elif hasattr(X, "shape"):
+        if hasattr(X, 'take') and (hasattr(index, 'dtype') and
+                                           index.dtype.kind == 'i'):
+            # This is often substantially faster than X[index]
+            return X.take(index, axis=0)
+        else:
+            return X[index]
+    else:
+        return [X[idx] for idx in index]
+
+
+def safe_split(X, y, index):
+    """From '_safe_split' in sklearn.utils.metaestimators"""
+    X_subset = safe_indexing(X, index)
+    y_subset = safe_indexing(y, index)
+
+    return X_subset, y_subset
+
+
 if __name__ == '__main__':
     print("Here is src/models/base.py !")
 

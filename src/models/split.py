@@ -41,5 +41,26 @@ class ValidationSplitHandler(BloscpackMixin):
             )
 
 
+class DatasetSplitHandler(PathHandlerBase):
+    def __init__(self):
+        super().__init__()
+        self.Y_TRUE_FILEPATH_PREFIX = self.path.join(self.PROCESSED_DATA_BASEPATH,
+                                                     Y_TRUE_FILEPATH_PREFIX)
+        self.Y_TRUE_FILEPATH_SUFFIX = Y_TRUE_FILEPATH_SUFFIX
+
+    def separate_and_save_train_y(self,
+                                  train_filepath_prefix,
+                                  location):
+        df_train = pd.read_csv('.'.join([train_filepath_prefix,
+                                         "{l}.tsv".format(l=location)]),
+                               **KWARGS_READ_CSV)
+        df_train[OBJECTIVE_LABEL_NAMES].to_csv(
+            '.'.join([self.Y_TRUE_FILEPATH_PREFIX,
+                      location,
+                      self.Y_TRUE_FILEPATH_SUFFIX]),
+            **KWARGS_TO_CSV
+        )
+
+
 if __name__ == '__main__':
-    print("Validation index splitter !")
+    print("Splitter !")
