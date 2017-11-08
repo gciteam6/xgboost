@@ -60,7 +60,7 @@ def gen_xgb_experimental_condition_list():
             "reg_alpha_{ralp}".format(ralp=ralp),
             "subsample_{ssam}".format(ssam=ssam),
             "colsample_bytree_{csbt}".format(csbt=csbt),
-            ".seed_{seed}".format(seed=seed)
+            "seed_{seed}".format(seed=seed)
         ])
         for nest in [1000] \
         for mdep in max_depth_conditions \
@@ -80,7 +80,7 @@ def gen_xgb_experimental_condition_list():
             "reg_alpha_{ralp}".format(ralp=ralp),
             "subsample_{ssam}".format(ssam=ssam),
             "colsample_bytree_{csbt}".format(csbt=csbt),
-            ".seed_{seed}".format(seed=seed)
+            "seed_{seed}".format(seed=seed)
         ])
         for nest in [1000] \
         for mdep in max_depth_conditions \
