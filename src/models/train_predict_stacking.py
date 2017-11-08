@@ -93,8 +93,9 @@ def main(predict_target, location):
                 index=df_pred_as_train.index,
                 columns=[blender.model_name, ]
             ).to_csv(
-                blender.gen_serialize_filepath("predict",
-                                               "{t}.{l}.tsv".format(t=predict_target, l=place)),
+                blender.gen_abspath(
+                    blender.gen_serialize_filepath(
+                        "predict", "{t}.{l}.tsv".format(t=predict_target, l=place))),
                 **KWARGS_TO_CSV
             )
 
@@ -121,8 +122,9 @@ def main(predict_target, location):
                 index=df_pred_as_test.index,
                 columns=[blender.model_name, ]
             ).to_csv(
-                blender.gen_serialize_filepath("predict",
-                                               "{t}.{l}.tsv".format(t=predict_target, l=place)),
+                blender.gen_abspath(
+                    blender.gen_serialize_filepath("predict",
+                                                   "{t}.{l}.tsv".format(t=predict_target, l=place))),
                 **KWARGS_TO_CSV
             )
 

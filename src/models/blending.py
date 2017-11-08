@@ -93,4 +93,4 @@ def _fit_and_predict(estimator, X, y, train_index, test_index):
 
     y_pred = estimator.fit(X_train, y_train).predict(X_test)
 
-    return (y_pred * y_std) + y_mean
+    return (y_pred * y_std) + y_mean, test_index
