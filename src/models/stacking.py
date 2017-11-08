@@ -7,7 +7,7 @@ import pandas as pd
 # Hand-made modules
 from .base import PathHandlerBase
 
-PROJECT_ROOT_DIRPATH = path.join(getcwd(), pardir)
+PROJECT_ROOT_DIRPATH = path.join(path.dirname(__file__), pardir, pardir)
 KWARGS_READ_CSV = {
     "sep": "\t",
     "header": 0,
