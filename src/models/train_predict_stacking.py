@@ -42,9 +42,9 @@ def gen_blender_and_stacker(predict_target, location):
     blender = MyBlender(BLEND_MODEL_INSTANCE, blend_model_name, BLEND_MODEL_PARAMS)
 
     stacker = MyStacker()
-    stacker.X_train_ = stacker.get_concatenated_xgb_predict(predict_target, location)
 
     # 'crossval' in here is fixed in all experimental conditions
+    stacker.X_train_ = stacker.get_concatenated_xgb_predict("crossval", location)
     stacker.X_train_.to_csv(
         path.join(stacker.PROCESSED_DATA_BASEPATH,
                   "dataset.predict_y.layer_0.crossval.{l}.tsv".format(l=location)),
@@ -97,11 +97,9 @@ def main(predict_target, location):
             pd.DataFrame(
                 blender.cross_val_predict(df_pred_as_train.as_matrix(), y_true_as_train.as_matrix()),
                 index=df_pred_as_train.index,
-                columns=[remove_predict_target_and_location_suffix(blender.model_name), ]
+                columns=[remove_predict_target_and_location_suffix(blender.model_name, predict_target), ]
             ).to_csv(
-                blender.gen_abspath(
-                    blender.gen_serialize_filepath(
-                        "predict", "{t}.{l}.tsv".format(t=predict_target, l=place))),
+                blender.gen_abspath(blender.gen_serialize_filepath("predict", "tsv")),
                 **KWARGS_TO_CSV
             )
 
@@ -126,11 +124,10 @@ def main(predict_target, location):
             pd.DataFrame(
                 blender.predict(df_pred_as_test.as_matrix()),
                 index=df_pred_as_test.index,
-                columns=[remove_predict_target_and_location_suffix(blender.model_name), ]
+                columns=[remove_predict_target_and_location_suffix(blender.model_name, predict_target), ]
             ).to_csv(
                 blender.gen_abspath(
-                    blender.gen_serialize_filepath("predict",
-                                                   "{t}.{l}.tsv".format(t=predict_target, l=place))),
+                    blender.gen_serialize_filepath("predict", "tsv")),
                 **KWARGS_TO_CSV
             )
 
