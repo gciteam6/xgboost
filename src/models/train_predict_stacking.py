@@ -112,7 +112,7 @@ def main(predict_target, location):
             logger.info('#2: fit & serialized a model @ {l} !'.format(l=place))
 
             # retrieve test X
-            df_pred_as_test = stacker.get_concatenated_xgb_predict(predict_target, location)
+            df_pred_as_test = stacker.get_concatenated_xgb_predict(predict_target, place)
             df_pred_as_test.to_csv(
                 stacker.path.join(stacker.PROCESSED_DATA_BASEPATH,
                                   "dataset.predict_y.layer_0.{t}.{l}.tsv".format(t=predict_target, l=place)),
@@ -123,7 +123,7 @@ def main(predict_target, location):
 
             # predict
             pd.DataFrame(
-                blender.predict(df_pred_as_test.as_matrix()),
+                blender.predict(df_pred_as_test[df_pred_as_train.columns].as_matrix()),
                 index=df_pred_as_test.index,
                 columns=[remove_predict_target_and_location_suffix(blender.model_name, predict_target), ]
             ).to_csv(
