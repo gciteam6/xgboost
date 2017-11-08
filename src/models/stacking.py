@@ -112,7 +112,7 @@ class MyStacker(PathHandlerBase):
                                       location,
                                       prefix=XGB_PREDICCT_FILEPATH_PREFIX,
                                       suffix=XGB_PREDICCT_FILEPATH_SUFFIX):
-        return glob('.*'.join([prefix, predict_target, location, suffix]))
+        return glob('*.*'.join([prefix, predict_target, location, suffix]))
 
     @staticmethod
     def concat_prediction_results(df, filepath_list, regex_ignore_column=None):

@@ -33,14 +33,23 @@ KWARGS_TO_CSV = {
 }
 
 
-def gen_blender_and_stacker(predict_target, place):
+def gen_blender_and_stacker(location):
+    predict_target = "crossval"
+
     blend_model_instance = PLSRegression()
     blend_model_params = {"n_components": 2}
     blend_model_name = "layer1.PLSRegression.n_components_2"
     blender = MyBlender(blend_model_instance, blend_model_name, blend_model_params)
 
     stacker = MyStacker()
-    stacker.X_train_ = stacker.get_concatenated_xgb_predict(predict_target, place)
+    stacker.X_train_ = stacker.get_concatenated_xgb_predict(predict_target, location)
+
+    stacker.X_train_.to_csv(
+        path.join(stacker.PROCESSED_DATA_BASEPATH,
+                  "dataset.predict_y.layer_0.{t}.{l}.tsv".format(
+                      t=predict_target, l=location)),
+        **KWARGS_TO_CSV
+    )
 
     return blender, stacker
 
@@ -60,7 +69,7 @@ def main(predict_target, location):
 
     for place in location_list:
         # get blender and stacker
-        blender, stacker = gen_blender_and_stacker(predict_target, place)
+        blender, stacker = gen_blender_and_stacker(place)
 
         # retrieve train y
         y_true_as_train = pd.read_csv(stacker.gen_y_true_filepath(place),
