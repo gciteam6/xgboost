@@ -112,10 +112,11 @@ def main(predict_target, location):
             logger.info('#2: fit & serialized a model @ {l} !'.format(l=place))
 
             # retrieve test X
-            df_pred_as_test = pd.read_csv(
+            df_pred_as_test = stacker.get_concatenated_xgb_predict(predict_target, location)
+            df_pred_as_test.to_csv(
                 stacker.path.join(stacker.PROCESSED_DATA_BASEPATH,
-                                  "predict_y.layer_0.{t}.{l}.tsv".format(t=predict_target, l=place)),
-                **KWARGS_READ_CSV
+                                  "dataset.predict_y.layer_0.{t}.{l}.tsv".format(t=predict_target, l=place)),
+                **KWARGS_TO_CSV
             )
 
             logger.info('#3: get y_pred as a test data @ {l} !'.format(l=place))
