@@ -33,12 +33,16 @@ KWARGS_TO_CSV = {
 }
 
 
-def gen_blender_and_stacker():
+def gen_blender_and_stacker(predict_target, place):
     blend_model_instance = PLSRegression()
     blend_model_params = {"n_components": 2}
     blend_model_name = "layer1.PLSRegression.n_components_2"
+    blender = MyBlender(blend_model_instance, blend_model_name, blend_model_params)
 
-    return MyBlender(blend_model_instance, blend_model_name, blend_model_params), MyStacker()
+    stacker = MyStacker()
+    stacker.X_train_ = stacker.get_concatenated_xgb_predict(predict_target, place)
+
+    return blender, stacker
 
 
 @click.command()
@@ -49,13 +53,15 @@ def main(predict_target, location):
     logger = logging.getLogger(__name__)
     logger.info('#0: train models')
 
-    blender, stacker = gen_blender_and_stacker()
     if location is None:
         location_list = LOCATIONS
     else:
         location_list = [location, ]
 
     for place in location_list:
+        # get blender and stacker
+        blender, stacker = gen_blender_and_stacker(predict_target, place)
+
         # retrieve train y
         y_true_as_train = pd.read_csv(stacker.gen_y_true_filepath(place),
                                       **KWARGS_READ_CSV)
@@ -64,12 +70,7 @@ def main(predict_target, location):
         logger.info('#1: get y_true @ {l} !'.format(l=place))
 
         # retrieve train X
-        df_pred_as_train = pd.read_csv(
-            stacker.path.join(stacker.PROCESSED_DATA_BASEPATH,
-                              "predict_y.layer_0.{t}.{l}.tsv".format(t=predict_target, l=place)),
-            **KWARGS_READ_CSV
-        )
-        df_pred_as_train = df_pred_as_train.loc[y_true_as_train.index, ~df_pred_as_train.isnull().any()]
+        df_pred_as_train = stacker.X_train_.loc[y_true_as_train.index, ~stacker.X_train_.isnull().any()]
 
         logger.info('#1: get y_pred as a train data @ {l} !'.format(l=place))
 
@@ -109,7 +110,7 @@ def main(predict_target, location):
             pd.DataFrame(
                 blender.predict(df_pred_as_test.values),
                 index=df_pred_as_test.index,
-                columns=[blend_model_name, ]
+                columns=[blender.model_name, ]
             ).to_csv(
                 blender.gen_serialize_filepath("predict",
                                                "{t}.{l}.tsv".format(t=predict_target, l=place)),

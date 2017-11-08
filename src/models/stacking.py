@@ -20,7 +20,7 @@ KWARGS_OUTER_MERGE = {
     "right_index": True
 }
 
-Y_TRUE_FILEPATH_PREFIX = path.join(PROJECT_ROOT_DIRPATH, "data", "processed", "train_y")
+Y_TRUE_FILEPATH_PREFIX = path.join(PROJECT_ROOT_DIRPATH, "data", "processed", "dataset.train_y")
 Y_TRUE_FILEPATH_SUFFIX = "tsv"
 XGB_PREDICCT_FILEPATH_PREFIX = path.join(PROJECT_ROOT_DIRPATH, "models", "xgb", "predict")
 XGB_PREDICCT_FILEPATH_SUFFIX = "tsv"
@@ -53,9 +53,14 @@ def gen_date_index(predict_target):
 def gen_xgb_experimental_condition_list():
     ret_list = [
         '.'.join([
-            "n_estimators_{nest}.max_depth_{mdep}.learning_rate_{lrat}.reg_lambda_{rlamb}.reg_alpha_{ralp}.subsample_{ssam}.colsample_bytree_{csbt}.seed_{seed}".format(
-                nest=nest, mdep=mdep, lrat=lrat, rlamb=rlamb, ralp=ralp, ssam=ssam, csbt=csbt, seed=seed
-            )
+            "n_estimators_{nest}".format(nest=nest),
+            "max_depth_{mdep}".format(mdep=mdep),
+            "learning_rate_{lrat}".format(lrat=lrat),
+            "reg_lambda_{rlamb}".format(rlamb=rlamb),
+            "reg_alpha_{ralp}".format(ralp=ralp),
+            "subsample_{ssam}".format(ssam=ssam),
+            "colsample_bytree_{csbt}".format(csbt=csbt),
+            ".seed_{seed}".format(seed=seed)
         ])
         for nest in [1000] \
         for mdep in max_depth_conditions \
@@ -68,8 +73,14 @@ def gen_xgb_experimental_condition_list():
     ]
     ret_list.extend([
         '.'.join([
-            "n_estimators_{nest}.max_depth_{mdep}.learning_rate_{lrat}.reg_lambda_{rlamb}.reg_alpha_{ralp}.subsample_{ssam}.colsample_bytree_{csbt}.seed_{seed}".format(
-                nest=nest, mdep=mdep, lrat=lrat, rlamb=rlamb, ralp=ralp, ssam=ssam, csbt=csbt, seed=seed)
+            "n_estimators_{nest}".format(nest=nest),
+            "max_depth_{mdep}".format(mdep=mdep),
+            "learning_rate_{lrat}".format(lrat=lrat),
+            "reg_lambda_{rlamb}".format(rlamb=rlamb),
+            "reg_alpha_{ralp}".format(ralp=ralp),
+            "subsample_{ssam}".format(ssam=ssam),
+            "colsample_bytree_{csbt}".format(csbt=csbt),
+            ".seed_{seed}".format(seed=seed)
         ])
         for nest in [1000] \
         for mdep in max_depth_conditions \
@@ -88,6 +99,7 @@ class MyStacker(PathHandlerBase):
     def __init__(self):
         super().__init__()
         self.REGEX_XGB_COLUMN_NAME = REGEX_XGB_COLUMN_NAME
+        self.X_train_ = pd.DataFrame(None)
 
     @staticmethod
     def gen_y_true_filepath(location,
@@ -103,17 +115,17 @@ class MyStacker(PathHandlerBase):
         return glob('.*'.join([prefix, predict_target, location, suffix]))
 
     @staticmethod
-    def concat_prediction_results(df, filepath_list, regex_string=None):
+    def concat_prediction_results(df, filepath_list, regex_ignore_column=None):
         # Is the data in the specific column not contain NaN ?
         is_filled_column = ~df.isnull().any()
 
-        if regex_string is None:
+        if regex_ignore_column is None:
             for filepath in filepath_list:
                 df_temp = pd.read_csv(filepath, **KWARGS_READ_CSV)
                 df.loc[df_temp.index, df_temp.columns] = df_temp
                 print(path.basename(filepath), "ended")
         else:
-            pattern = re.compile(regex_string)
+            pattern = re.compile(regex_ignore_column)
             for filepath in filepath_list:
                 condition = path.basename(filepath)
                 matcher = pattern.search(condition)
@@ -136,7 +148,8 @@ class MyStacker(PathHandlerBase):
         try:
             df_pred = pd.read_csv(
                 self.path.join(self.PROCESSED_DATA_BASEPATH,
-                               "predict_y.layer_0.{t}.{l}.tsv".format(t=predict_target, l=location)),
+                               "dataset.predict_y.layer_0.{t}.{l}.tsv".format(
+                                   t=predict_target, l=location)),
                 **KWARGS_READ_CSV
             )
         except FileNotFoundError:
@@ -146,10 +159,11 @@ class MyStacker(PathHandlerBase):
             )
 
         return self.concat_prediction_results(df_pred, xgb_predict_filepath_list,
-                                              regex_string=self.REGEX_XGB_COLUMN_NAME)
+                                              regex_ignore_column=self.REGEX_XGB_COLUMN_NAME)
 
     def get_concatenated_blending_predict(self,
                                           base_dirpath: str,
+                                          num_layer: int,
                                           predict_target: str,
                                           location: str,
                                           suffix="tsv"):
@@ -162,13 +176,14 @@ class MyStacker(PathHandlerBase):
         try:
             df_pred = pd.read_csv(
                 self.path.join(self.PROCESSED_DATA_BASEPATH,
-                               "predict_y.layer_1.{t}.{l}.tsv".format(t=predict_target, l=location)),
+                               "dataset.predict_y.layer_{n}.{t}.{l}.tsv".format(
+                                   n=num_layer, t=predict_target, l=location
+                               )),
                 **KWARGS_READ_CSV
             )
         except FileNotFoundError:
             df_pred = pd.DataFrame(
                 index=gen_date_index(predict_target),
-                columns=gen_xgb_experimental_condition_list()
             )
 
         return self.concat_prediction_results(df_pred, stacking_predict_filepath_list)
