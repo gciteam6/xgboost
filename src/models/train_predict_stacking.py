@@ -95,9 +95,9 @@ def main(predict_target, location):
         if predict_target == "crossval":
             # try cross-validation
             pd.DataFrame(
-                blender.cross_val_predict(df_pred_as_train.values, y_true_as_train.values),
+                blender.cross_val_predict(df_pred_as_train.as_matrix(), y_true_as_train.as_matrix()),
                 index=df_pred_as_train.index,
-                columns=[blender.model_name, ]
+                columns=[remove_predict_target_and_location_suffix(blender.model_name), ]
             ).to_csv(
                 blender.gen_abspath(
                     blender.gen_serialize_filepath(
@@ -105,11 +105,11 @@ def main(predict_target, location):
                 **KWARGS_TO_CSV
             )
 
-            logger.info('#2: estimate y_pred of train dataset like cross-validation @ {l} !'.format(l=place))
+            logger.info('#2: estimate y_pred of train samples like cross-validation @ {l} !'.format(l=place))
 
         elif predict_target == "test":
             # fit model with the whole samples
-            blender.fit(df_pred_as_train.values, y_true_as_train.values)
+            blender.fit(df_pred_as_train.as_matrix(), y_true_as_train.as_matrix())
 
             logger.info('#2: fit & serialized a model @ {l} !'.format(l=place))
 
