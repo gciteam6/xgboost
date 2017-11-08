@@ -2,6 +2,7 @@
 from os import path, pardir
 import sys
 import logging
+import re
 
 # not used in this stub but often useful for finding various files
 PROJECT_ROOT_DIRPATH = path.join(path.dirname(__file__), pardir, pardir)
@@ -16,7 +17,10 @@ from sklearn.cross_decomposition import PLSRegression
 from src.models.blending import MyBlender
 from src.models.stacking import MyStacker
 
-DATETIME_FORMAT = "(?P<year>\d{4})(?P<month>\d{1,2})(?P<day>\d{1,2})(?P<hour>\d{2})(?P<minute>\d{2})"
+BLEND_MODEL_INSTANCE = PLSRegression()
+BLEND_MODEL_BASENAME = "layer1.PLSRegression.n_components_2"
+BLEND_MODEL_PARAMS = {"n_components": 2}
+
 LOCATIONS = (
     "ukishima",
     "ougishima",
@@ -33,25 +37,27 @@ KWARGS_TO_CSV = {
 }
 
 
-def gen_blender_and_stacker(location):
-    predict_target = "crossval"
-
-    blend_model_instance = PLSRegression()
-    blend_model_params = {"n_components": 2}
-    blend_model_name = "layer1.PLSRegression.n_components_2"
-    blender = MyBlender(blend_model_instance, blend_model_name, blend_model_params)
+def gen_blender_and_stacker(predict_target, location):
+    blend_model_name = BLEND_MODEL_BASENAME + ".{t}.{l}".format(t=predict_target, l=location)
+    blender = MyBlender(BLEND_MODEL_INSTANCE, blend_model_name, BLEND_MODEL_PARAMS)
 
     stacker = MyStacker()
     stacker.X_train_ = stacker.get_concatenated_xgb_predict(predict_target, location)
 
+    # 'crossval' in here is fixed in all experimental conditions
     stacker.X_train_.to_csv(
         path.join(stacker.PROCESSED_DATA_BASEPATH,
-                  "dataset.predict_y.layer_0.{t}.{l}.tsv".format(
-                      t=predict_target, l=location)),
+                  "dataset.predict_y.layer_0.crossval.{l}.tsv".format(l=location)),
         **KWARGS_TO_CSV
     )
 
     return blender, stacker
+
+
+def remove_predict_target_and_location_suffix(target_string, predict_target):
+    matcher = re.search(predict_target, target_string)
+
+    return target_string[:matcher.start()-1]
 
 
 @click.command()
@@ -69,7 +75,7 @@ def main(predict_target, location):
 
     for place in location_list:
         # get blender and stacker
-        blender, stacker = gen_blender_and_stacker(place)
+        blender, stacker = gen_blender_and_stacker(predict_target, place)
 
         # retrieve train y
         y_true_as_train = pd.read_csv(stacker.gen_y_true_filepath(place),
@@ -118,9 +124,9 @@ def main(predict_target, location):
 
             # predict
             pd.DataFrame(
-                blender.predict(df_pred_as_test.values),
+                blender.predict(df_pred_as_test.as_matrix()),
                 index=df_pred_as_test.index,
-                columns=[blender.model_name, ]
+                columns=[remove_predict_target_and_location_suffix(blender.model_name), ]
             ).to_csv(
                 blender.gen_abspath(
                     blender.gen_serialize_filepath("predict",
@@ -128,7 +134,7 @@ def main(predict_target, location):
                 **KWARGS_TO_CSV
             )
 
-            logger.info('#4: estimate & save y_pred of test dataset @ {l} !'.format(l=place))
+            logger.info('#4: estimate & save y_pred of test samples @ {l} !'.format(l=place))
 
 
 if __name__ == '__main__':
