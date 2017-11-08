@@ -17,7 +17,6 @@ from src.models.split import DatasetSplitHandler
 TRAIN_FILEPATH_PREFIX = path.join(
     PROJECT_ROOT_DIRPATH, "data/interim/dataset.train_X_y"
 )
-TRAIN_FILEPATH_SUFFIX = "yonekurayama.blp"
 LOCATIONS = (
     "ukishima",
     "ougishima",
@@ -30,7 +29,7 @@ LOCATIONS = (
 @click.option("--n_splits", "-n", type=int, default=5)
 def main(location, n_splits):
     logger = logging.getLogger(__name__)
-    logger.info('#0: separating cross-validation index')
+    logger.info('#0: separating X and y from the train data set')
 
     #
     # split train X and y
@@ -48,9 +47,7 @@ def main(location, n_splits):
         )
         splitter.separate_and_save_train_y(train_filepath_prefix, place)
 
-        logger.info('#1: get cross-validation test index  @ {l}'.format(l=place))
-
-    logger.info('#1: end separating the cross-validation index')
+        logger.info('#1: end separating & saving train y @ {l}'.format(l=place))
 
 
 if __name__ == '__main__':

@@ -15,7 +15,7 @@ KWARGS_TO_CSV = {
     "sep": "\t"
 }
 OBJECTIVE_LABEL_NAMES = ["kwh", ]
-Y_TRUE_FILEPATH_PREFIX = "train_y"
+Y_TRUE_FILEPATH_PREFIX = "dataset.train_y"
 Y_TRUE_FILEPATH_SUFFIX = "tsv"
 
 
