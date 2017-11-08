@@ -81,7 +81,7 @@ def main(predict_target, location):
             pd.DataFrame(
                 blender.cross_val_predict(df_pred_as_train.values, y_true_as_train.values),
                 index=df_pred_as_train.index,
-                columns=[blend_model_name, ]
+                columns=[blender.model_name, ]
             ).to_csv(
                 blender.gen_serialize_filepath("predict",
                                                "{t}.{l}.tsv".format(t=predict_target, l=place)),
