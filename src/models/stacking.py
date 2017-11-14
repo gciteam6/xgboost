@@ -98,6 +98,8 @@ def gen_xgb_experimental_condition_list():
 class MyStacker(PathHandlerBase):
     def __init__(self):
         super().__init__()
+        self.KWARGS_READ_CSV = KWARGS_READ_CSV
+        self.KWARGS_OUTER_MERGE = KWARGS_OUTER_MERGE
         self.REGEX_XGB_COLUMN_NAME = REGEX_XGB_COLUMN_NAME
         self.X_train_ = pd.DataFrame(None)
 

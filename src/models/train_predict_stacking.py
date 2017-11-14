@@ -60,14 +60,73 @@ def remove_predict_target_and_location_suffix(target_string, predict_target):
     return target_string[:matcher.start()-1]
 
 
+def run_blending(predict_target, location, blender, stacker):
+    logger = logging.getLogger(__name__)
+    logger.info('#0: train models')
+
+    # retrieve train y
+    y_true_as_train = pd.read_csv(stacker.gen_y_true_filepath(location),
+                                  **stacker.KWARGS_READ_CSV)
+    y_true_as_train.dropna(axis=0, inplace=True)
+
+    logger.info('#1: get y_true @ {l} !'.format(l=location))
+
+    # retrieve train X
+    df_pred_as_train = stacker.X_train_.loc[y_true_as_train.index, ~stacker.X_train_.isnull().any()]
+
+    logger.info('#1: get y_pred as a train data @ {l} !'.format(l=location))
+
+    #
+    # bifurcation
+    #
+    if predict_target == "crossval":
+        # try cross-validation
+        pd.DataFrame(
+            blender.cross_val_predict(df_pred_as_train.as_matrix(), y_true_as_train.as_matrix()),
+            index=df_pred_as_train.index,
+            columns=[remove_predict_target_and_location_suffix(blender.model_name, predict_target), ]
+        ).to_csv(
+            blender.gen_abspath(blender.gen_serialize_filepath("predict", "tsv")),
+            **KWARGS_TO_CSV
+        )
+
+        logger.info('#2: estimate y_pred of train samples like cross-validation @ {l} !'.format(l=location))
+
+    elif predict_target == "test":
+        # fit model with the whole samples
+        blender.fit(df_pred_as_train.as_matrix(), y_true_as_train.as_matrix())
+
+        logger.info('#2: fit & serialized a model @ {l} !'.format(l=location))
+
+        # retrieve test X
+        df_pred_as_test = stacker.get_concatenated_xgb_predict(predict_target, location)
+        df_pred_as_test.to_csv(
+            stacker.path.join(stacker.PROCESSED_DATA_BASEPATH,
+                              "dataset.predict_y.layer_0.{t}.{l}.tsv".format(t=predict_target, l=location)),
+            **KWARGS_TO_CSV
+        )
+
+        logger.info('#3: get y_pred as a test data @ {l} !'.format(l=location))
+
+        # predict
+        pd.DataFrame(
+            blender.predict(df_pred_as_test[df_pred_as_train.columns].as_matrix()),
+            index=df_pred_as_test.index,
+            columns=[remove_predict_target_and_location_suffix(blender.model_name, predict_target), ]
+        ).to_csv(
+            blender.gen_abspath(
+                blender.gen_serialize_filepath("predict", "tsv")),
+            **KWARGS_TO_CSV
+        )
+
+        logger.info('#4: estimate & save y_pred of test samples @ {l} !'.format(l=location))
+
+
 @click.command()
 @click.option("-t", "predict_target", flag_value="test", default=True)
 @click.option("-v", "predict_target", flag_value="crossval")
 @click.option("--location", "-l", type=str, default=None)
 def main(predict_target, location):
-    logger = logging.getLogger(__name__)
-    logger.info('#0: train models')
-
     if location is None:
         location_list = LOCATIONS
     else:
