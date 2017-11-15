@@ -76,10 +76,10 @@ def run_blending(predict_target, location, blender, stacker):
                                   **stacker.KWARGS_READ_CSV)
     y_true_as_train.dropna(axis=0, inplace=True)
 
-    logger.info('#1: get y_true @ {l} !'.format(l=location))
+    logger.info('#1: get y_true as a train data @ {l} !'.format(l=location))
 
     # retrieve train X
-    df_pred_as_train = stacker.X_train_.loc[y_true_as_train.index, ~stacker.X_train_.isnull().any()]
+    df_pred_as_train = stacker.X_train_.loc[y_true_as_train.index, :].copy(deep=True)
 
     logger.info('#1: get y_pred as a train data @ {l} !'.format(l=location))
 
@@ -150,6 +150,7 @@ def main(predict_target, location):
                       "dataset.predict_y.layer_0.crossval.{l}.tsv".format(l=location)),
             **KWARGS_TO_CSV
         )
+        stacker.X_train_ = stacker.X_train_.loc[:, ~stacker.X_train_.isnull().any()]
 
         for blender in blender_list:
             run_blending(predict_target, place, blender, stacker)
