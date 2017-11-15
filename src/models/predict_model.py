@@ -16,41 +16,52 @@ import bloscpack as bp
 from src.models.xgb import MyXGBRegressor
 
 TRAIN_FILEPATH_PREFIX = path.join(PROJECT_ROOT_DIRPATH, "data/processed/dataset.train_X_y")
-TRAIN_FILEPATH_EXTENTION = "blp"
 TEST_FILEPATH_PREFIX = path.join(PROJECT_ROOT_DIRPATH, "data/processed/dataset.test_X")
-TEST_FILEPATH_EXTENSION = "blp"
 PREDICT_FILENAME_PREFIX = "predict"
-PREDICT_FILENAME_EXTENSION = "blp"
-XGB_PARAMS = {
-    "n_estimators": 500,
-    "nthread": -1,
-    "seed": 1
-}
+PREDICT_FILENAME_EXTENSION = "tsv"
+
 LOCATIONS = (
     "ukishima",
     "ougishima",
     "yonekurayama"
 )
+KWARGS_READ_CSV = {
+    "sep": "\t",
+    "header": 0,
+    "parse_dates": [0],
+    "index_col": 0
+}
+KWARGS_TO_CSV = {
+    "sep": "\t"
+}
 
 
-def get_test_X(filepath_prefix, filepath_suffix, fold_id=None):
-    func_gen_filepath = lambda file_attr: '.'.join([filepath_prefix,
-                                                    file_attr,
-                                                    filepath_suffix])
-    values = bp.unpack_ndarray_file(func_gen_filepath("values"))
+def gen_params_dict(n_estimators, max_depth, learning_rate,
+                    reg_lambda, reg_alpha,
+                    subsample, colsample_bytree, seed):
+    return {"n_estimators": n_estimators,
+            "max_depth": max_depth,
+            "learning_rate": learning_rate,
+            "reg_lambda": reg_lambda,
+            "reg_alpha": reg_alpha,
+            "subsample": subsample,
+            "colsample_bytree": colsample_bytree,
+            "seed": seed}
+
+
+def get_test_X(filepath_prefix, location, fold_id=None):
+    df = pd.read_csv('.'.join([filepath_prefix, location + ".tsv"]), **KWARGS_READ_CSV)
+
     if isinstance(fold_id, int):
-        whole_index = bp.unpack_ndarray_file(func_gen_filepath("index"))
-        columns = bp.unpack_ndarray_file(func_gen_filepath("columns"))
-        df = pd.DataFrame(values, index=pd.DatetimeIndex(whole_index), columns=columns)
-
-        extract_index = pd.DatetimeIndex(
-            bp.unpack_ndarray_file(func_gen_filepath("crossval{f}".format(f=fold_id)))
-        )
+        crossval_index_filename = '.'.join([filepath_prefix,
+                                            "index.crossval{f}".format(f=fold_id),
+                                            location + ".blp"])
+        extract_index = pd.DatetimeIndex(bp.unpack_ndarray_file(crossval_index_filename))
         df = df.loc[extract_index, :]
 
-        return df.iloc[:, :-1].values.astype(float)
+        return df.iloc[:, :-1].values, df.index
     else:
-        return values.astype(float)
+        return df.values, df.index
 
 
 @click.command()
@@ -58,7 +69,18 @@ def get_test_X(filepath_prefix, filepath_suffix, fold_id=None):
 @click.option("-v", "predict_target", flag_value="crossval")
 @click.option("--location", "-l", type=str, default=None)
 @click.option("--fold-id", "-f", type=int)
-def main(location, predict_target, fold_id):
+@click.option("--n_estimators", type=int, default=1000)
+@click.option("--max_depth", type=int, default=3)
+@click.option("--learning_rate", type=float, default=0.1)
+@click.option("--reg_lambda", type=float, default=1.0)
+@click.option("--reg_alpha", type=float, default=0.0)
+@click.option("--subsample", type=float, default=0.8)
+@click.option("--colsample_bytree", type=float, default=0.8)
+@click.option("--seed", type=int, default=0)
+def main(location, predict_target, fold_id,
+         n_estimators, max_depth, learning_rate,
+         reg_lambda, reg_alpha,
+         subsample, colsample_bytree, seed):
     logger = logging.getLogger(__name__)
     logger.info('#0: run prediction ')
 
@@ -70,26 +92,29 @@ def main(location, predict_target, fold_id):
     else:
         location_list = [location, ]
 
+    XGB_PARAMS = gen_params_dict(n_estimators, max_depth, learning_rate,
+                                 reg_lambda, reg_alpha,
+                                 subsample, colsample_bytree, seed)
+    param_str = str()
+    for (key, value) in XGB_PARAMS.items():
+        param_str += "{k}_{v}.".format(k=key, v=value)
+
     for place in location_list:
         if predict_target == "test":
             logger.info('#1: predict all training data by the model trained those @ {l} !'.format(l=place))
 
-            m = MyXGBRegressor(model_name="test.{l}".format(l=place), params=XGB_PARAMS)
+            m = MyXGBRegressor(model_name=param_str + "test.{l}".format(l=place), params=XGB_PARAMS)
 
-            X_test = get_test_X(TEST_FILEPATH_PREFIX,
-                                place + '.' + TEST_FILEPATH_EXTENSION,
-                                fold_id=None)
+            X_test, ret_index = get_test_X(TEST_FILEPATH_PREFIX, place, fold_id=None)
         elif predict_target == "crossval":
             if fold_id is None:
                 raise ValueError("Specify validation dataset number as an integer !")
 
             logger.info('#1: predict test subset in cross-validation of fold-id: {f} @ {l} !'.format(f=fold_id, l=place))
 
-            m = MyXGBRegressor(model_name="crossval{i}.{l}".format(i=fold_id, l=place), params=XGB_PARAMS)
+            m = MyXGBRegressor(model_name=param_str + "crossval{i}.{l}".format(i=fold_id, l=place), params=XGB_PARAMS)
 
-            X_test = get_test_X(TRAIN_FILEPATH_PREFIX,
-                                place + '.' + TRAIN_FILEPATH_EXTENTION,
-                                fold_id=fold_id)
+            X_test, ret_index = get_test_X(TRAIN_FILEPATH_PREFIX, place, fold_id=fold_id)
         else:
             raise ValueError("Invalid flag, '-t' or '-v' is permitted !")
 
@@ -98,12 +123,13 @@ def main(location, predict_target, fold_id):
         logger.info('#2: now predicting...')
         y_pred = m.predict(X_test)
 
-        m.to_blp(
-            y_pred,
-            path.join(
-                m.MODELS_SERIALIZING_BASEPATH,
-                 '.'.join([PREDICT_FILENAME_PREFIX, m.model_name, PREDICT_FILENAME_EXTENSION])
-            )
+
+        pd.DataFrame(
+            y_pred, index=ret_index, columns=[param_str[:-1]]
+        ).to_csv(
+            path.join(m.MODELS_SERIALIZING_BASEPATH,
+                      '.'.join([PREDICT_FILENAME_PREFIX, m.model_name, PREDICT_FILENAME_EXTENSION])),
+            **KWARGS_TO_CSV
         )
 
         logger.info('#2: a prediction result is saved @ {l} !'.format(l=place))

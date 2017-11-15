@@ -12,7 +12,8 @@ sudo yum install -y \
     sqlite-devel \
     openssl-devel \
     xz \
-    xz-devel
+    xz-devel \
+    tmux
 
 git clone https://github.com/yyuu/pyenv.git ~/.pyenv
 echo '# pyenv configurations' >> ~/.bashrc

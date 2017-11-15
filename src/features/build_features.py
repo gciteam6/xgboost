@@ -19,8 +19,8 @@ from src.features.dummy import DummyFeatureHandler
 from src.features.time_series import TimeSeriesReshaper
 
 NAN_NUMBER_THRESHOLD = 10000
-SHIFT_INDEX_OFFSETS_HOUR = -28
 
+SHIFT_INDEX_OFFSET_HOURS = [28, 32, 36, 40, 44, 48]
 OBJECTIVE_LABEL_NAMES = ["kwh", ]
 TRAIN_SAMPLE_SETTINGS = ["train{i}".format(i=n_iter) for n_iter in range(8)]
 TEST_SAMPLE_SETTINGS = ["test{i}".format(i=n_iter) for n_iter in range(3)]
@@ -59,54 +59,54 @@ def main():
 
     maker = DatasetHandler(columns_y=OBJECTIVE_LABEL_NAMES)
 
+    # #
+    # # convert categorical to dummy
+    # #
+    # categ = DummyFeatureHandler()
     #
-    # convert categorical to dummy
+    # for location in LOCATIONS:
+    #     for setting in SETTINGS:
+    #         df_data = maker.read_blp_as_df(
+    #             path.join(maker.INTERIM_DATA_BASEPATH, "dataset.amd_sfc_forecast_kwh.{s}".format(s=setting)),
+    #             "{l}.blp".format(l=location)
+    #         )
     #
-    categ = DummyFeatureHandler()
-
-    for location in LOCATIONS:
-        for setting in SETTINGS:
-            df_data = maker.read_blp_as_df(
-                path.join(maker.PROCESSED_DATA_BASEPATH, "dataset.amd_sfc_forecast_kwh.{s}".format(s=setting)),
-                "{l}.blp".format(l=location)
-            )
-
-            logger.info('#1: load dataset to the memory @ {l}-{s} !'.format(l=location, s=setting))
-
-            for col_name, correspond_dict in categ.FORECAST_ATTRIBUTES.items():
-                df_data[col_name] = categ.convert_series_along_dict(df_data[col_name], correspond_dict)
-
-            sr_month = categ.extract_month(df_data.index)
-            df_month_cos_sin = categ.convert_linear_to_circular(sr_month, categ.MONTH_CATEGORY_NUMBER)
-            df_data = df_data.merge(df_month_cos_sin, **maker.KWARGS_OUTER_MERGE)
-
-            sr_hour = categ.extract_hour(df_data.index)
-            df_hour_cos_sin = categ.convert_linear_to_circular(sr_hour, categ.HOUR_CATEGORY_NUMBER)
-            df_data = df_data.merge(df_hour_cos_sin, **maker.KWARGS_OUTER_MERGE)
-
-            for col_name in CIRCULAR_CATEGORICAL_VARIABLES:
-                df_temp_cos_sin = categ.convert_linear_to_circular(
-                    df_data[col_name], len(categ.FORECAST_ATTRIBUTES[col_name])
-                )
-                df_data = df_data.merge(df_temp_cos_sin, **maker.KWARGS_OUTER_MERGE)
-                df_data.drop(col_name, axis=1, inplace=True)
-
-            maker.to_blp_via_df(
-                df_data,
-                path.join(maker.INTERIM_DATA_BASEPATH, "dataset.data.{s}".format(s=setting)),
-                "{l}.features#1".format(l=location)
-            )
-
-            logger.info('#1: covert categorical features to dummy ones & save as a file @ {l}-{s} !'.format(l=location, s=setting))
-            del (
-                df_data,
-                sr_month, df_month_cos_sin,
-                sr_hour, df_hour_cos_sin
-            )
-
-    logger.info('#1: end categorical feature processing !')
-    del categ
-    gc.collect()
+    #         logger.info('#1: load dataset to the memory @ {l}-{s} !'.format(l=location, s=setting))
+    #
+    #         for col_name, correspond_dict in categ.FORECAST_ATTRIBUTES.items():
+    #             df_data[col_name] = categ.convert_series_along_dict(df_data[col_name], correspond_dict)
+    #
+    #         sr_month = categ.extract_month(df_data.index)
+    #         df_month_cos_sin = categ.convert_linear_to_circular(sr_month, categ.MONTH_CATEGORY_NUMBER)
+    #         df_data = df_data.merge(df_month_cos_sin, **maker.KWARGS_OUTER_MERGE)
+    #
+    #         sr_hour = categ.extract_hour(df_data.index)
+    #         df_hour_cos_sin = categ.convert_linear_to_circular(sr_hour, categ.HOUR_CATEGORY_NUMBER)
+    #         df_data = df_data.merge(df_hour_cos_sin, **maker.KWARGS_OUTER_MERGE)
+    #
+    #         for col_name in CIRCULAR_CATEGORICAL_VARIABLES:
+    #             df_temp_cos_sin = categ.convert_linear_to_circular(
+    #                 df_data[col_name], len(categ.FORECAST_ATTRIBUTES[col_name])
+    #             )
+    #             df_data = df_data.merge(df_temp_cos_sin, **maker.KWARGS_OUTER_MERGE)
+    #             df_data.drop(col_name, axis=1, inplace=True)
+    #
+    #         maker.to_blp_via_df(
+    #             df_data,
+    #             path.join(maker.INTERIM_DATA_BASEPATH, "dataset.data.{s}".format(s=setting)),
+    #             "{l}.features#1".format(l=location)
+    #         )
+    #
+    #         logger.info('#1: covert categorical features to dummy ones & save as a file @ {l}-{s} !'.format(l=location, s=setting))
+    #         del (
+    #             df_data,
+    #             sr_month, df_month_cos_sin,
+    #             sr_hour, df_hour_cos_sin
+    #         )
+    #
+    # logger.info('#1: end categorical feature processing !')
+    # del categ
+    # gc.collect()
 
     #
     # nan processings (prune verbose features and fill nan)
@@ -155,9 +155,19 @@ def main():
         shift_col_name_list = reshaper.get_regex_matched_col_name(
             df_X.columns, reshaper.REGEX_SHIFT_COL_NAME_PREFIXES
         )
-        df_X = reshaper.shift_indexes(
-            df_X, pd.offsets.Hour(SHIFT_INDEX_OFFSETS_HOUR), shift_col_name_list
-        )
+        non_shift_col_name_list = [
+            col_name for col_name in df_X.columns \
+            if col_name not in shift_col_name_list
+        ]
+
+        df_shift = df_X[shift_col_name_list]
+        df_X = df_X[non_shift_col_name_list]
+
+        for shift_hour in SHIFT_INDEX_OFFSET_HOURS:
+            df_temp = reshaper.get_shifted_dataframe(df_shift, pd.offsets.Hour(shift_hour))
+            df_temp.columns = [col_name + "_{h}".format(h=shift_hour) \
+                               for col_name in shift_col_name_list]
+            df_X = df_X.merge(df_temp, **reshaper.KWARGS_OUTER_MERGE)
 
         logger.info('#2: shift the required data up @ {l} !'.format(l=location))
 
@@ -165,7 +175,8 @@ def main():
         df_data = df_X.merge(df_y, **maker.KWARGS_INNER_MERGE)
 
         logger.info('#2: fill nan in df_X of {l} !'.format(l=location))
-        del (df_X, df_y, shift_col_name_list)
+        del (df_X, df_y,
+             df_shift, shift_col_name_list)
         gc.collect()
 
         maker.to_blp_via_df(
@@ -209,10 +220,10 @@ def main():
         gc.collect()
 
         df_train, _ = maker.separate_train_test(df_every_30)
-        maker.to_blp_via_df(
+        maker.to_tsv(
             df_train,
-            path.join(maker.PROCESSED_DATA_BASEPATH, "dataset.train_X_y"),
-            "{l}.blp".format(l=location)
+            path.join(maker.PROCESSED_DATA_BASEPATH,
+                      "dataset.train_X_y.{l}.tsv".format(l=location))
         )
 
         logger.info('#3: save train dataset as a file @ {l} !'.format(l=location))
@@ -221,10 +232,10 @@ def main():
 
         _, df_test = maker.separate_train_test(df_every_30)
         df_test, _ = maker.separate_X_y(df_test)
-        maker.to_blp_via_df(
+        maker.to_tsv(
             df_test,
-            path.join(maker.PROCESSED_DATA_BASEPATH, "dataset.test_X"),
-            "{l}.blp".format(l=location)
+            path.join(maker.PROCESSED_DATA_BASEPATH,
+                      "dataset.test_X.{l}.tsv".format(l=location))
         )
 
         logger.info('#3: save test dataset as a file @ {l} !'.format(l=location))

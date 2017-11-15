@@ -105,23 +105,53 @@ $ python src/models/predict_model.py -t -l ougishima
 + __入力__: src/features/build_features.pyの出力
 + __出力__:
     - pickleでserializeされたXGBoostモデル(例↓)
-        * models/xgb/fit_model.test.ougishima.pkl
-        * models/xgb/fit_model.crossval0.ougishima.pkl
-    - 予測値, numpy.ndarrayをbloscpackで保存したデータ(例↓)
-        * models/xgb/predict.test.ougishima.pkl
-        * models/xgb/predict.crossval0.ougishima.blp
+        * models/xgb/fit_model.n_estimators_1000.max_depth_3.learning_rate_0.05.test.ougishima.pkl
+        * models/xgb/fit_model.n_estimators_1000.max_depth_3.learning_rate_0.05.crossval0.ougishima.pkl
+    - 予測値を保存したTSVファイル(例↓)
+        * models/xgb/predict.n_estimators_1000.max_depth_3.learning_rate_0.05.test.ougishima.tsv
+        * models/xgb/predict.n_estimators_1000.max_depth_3.learning_rate_0.05.crossval0.ougishima.tsv
 + 中間生成物
     - Cross-validation時のfolding indexをまとめたファイル(例↓)
         * data/processed/dataset.train_X_y.crossval0.ougishima.blp
         * data/processed/dataset.train_X_y.crossval1.ougishima.blp
 + 注意
-    - (Cross-validationでない)test用のデータが欠損している
+    - トレーニングデータの最初が欠損している
         * データセットの時刻をずらす操作を行っているため
-        * まともに動かそうとするならば, amedas, surfaceの2017-04-01 00:10:00から2017-04-02 04:00:00までのデータが必要
+    - コマンドラインで愚直にすべて回すのは面倒
+        * shell scriptの記述例も載せている(src/models/itertive_xgb_modeling.sh.sample)
 + コマンドがやっていること
-    - ファイル名が体現している
+    - XGBoostでモデルを構築して予測する
+    - 後々を考えて, cross-validationの予測結果も残す
 + 編集ログ
     - 2017/10/17執筆
+    - 2017/11/15修正: 保存形式変更(.blp → .tsv), ファイル名のつけ方変更
+
+
+Stacking/blendingによる予測モデル作成
+------------
++ コマンドとしてやること
+```bash
+$ python src/models/train_predict_stacking.py -v  # fold-outでトレーニングデータのサンプルに対し予測値を算出する
+$ python src/models/train_predict_stacking.py -t  # トレーニングデータ中すべてのサンプルを使ってblendingモデルを構築し, テストデータの予測値を出す
+
+# `-l`で発電所を指定できる. その場合, `ukishima`・`ougishima`・`yonekurayama`のいずれかを続ける
+$ python src/models/train_predict_stacking.py -v -l ougishima
+```
++ __入力__: models/xgb/内の予測結果
++ __出力__:
+    - pickleでserializeされたblemndingモデル(例↓)
+        * models/blending/fit_model.layer1.xgb.n_estimators_1000.max_depth_3.learning_rate_0.05.test.ougishima.pkl
+    - 予測値を保存したTSVファイル(例↓)
+        * models/blending/predict.layer1.xgb.n_estimators_1000.max_depth_3.learning_rate_0.05.crossval.ougishima.tsv
+        * models/blending/predict.layer1.xgb.n_estimators_1000.max_depth_3.learning_rate_0.05.test.ougishima.tsv
++ 注意
+    - Blendingモデルについて
+        * XGBoost以外のモデルを使いたいならば, src/models/train_predict_stacking.pyを編集する
+        * blending部分は関数化したので, コマンドライン以外からでも使用できる(使用例は載せていない)
++ コマンドがやっていること
+    - XGBoostの予測結果からblendingする
++ 編集ログ
+    - 2017/11/15執筆
 
 
 次やること

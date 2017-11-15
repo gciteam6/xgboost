@@ -16,35 +16,43 @@ import bloscpack as bp
 from src.models.xgb import MyXGBRegressor
 
 TRAIN_FILEPATH_PREFIX = path.join(PROJECT_ROOT_DIRPATH, "data/processed/dataset.train_X_y")
-TRAIN_FILEPATH_EXTENTION = "blp"
-XGB_PARAMS = {
-    "n_estimators": 500,
-    "nthread": -1,
-    "seed": 1
-}
+TRAIN_FILEPATH_EXTENTION = "tsv"
+
 LOCATIONS = (
     "ukishima",
     "ougishima",
     "yonekurayama"
 )
+KWARGS_READ_CSV = {
+    "sep": "\t",
+    "header": 0,
+    "parse_dates": [0],
+    "index_col": 0
+}
 
 
-def get_train_X_y(train_filepath_prefix, train_filepath_suffix, fold_id=None):
-    func_gen_filepath = lambda file_attr: '.'.join([train_filepath_prefix,
-                                                    file_attr,
-                                                    train_filepath_suffix])
-    values = bp.unpack_ndarray_file(func_gen_filepath("values"))
-    whole_index = bp.unpack_ndarray_file(func_gen_filepath("index"))
-    columns = bp.unpack_ndarray_file(func_gen_filepath("columns"))
-    df_train = pd.DataFrame(
-        values, index=pd.DatetimeIndex(whole_index), columns=columns
-    ).apply(pd.to_numeric, errors="coerce")
+def gen_params_dict(n_estimators, max_depth, learning_rate,
+                    reg_lambda, reg_alpha,
+                    subsample, colsample_bytree, seed):
+    return {"n_estimators": n_estimators,
+            "max_depth": max_depth,
+            "learning_rate": learning_rate,
+            "reg_lambda": reg_lambda,
+            "reg_alpha": reg_alpha,
+            "subsample": subsample,
+            "colsample_bytree": colsample_bytree,
+            "seed": seed}
+
+
+def get_train_X_y(train_filepath_prefix, location, fold_id=None):
+    df_train = pd.read_csv('.'.join([train_filepath_prefix, location + ".tsv"]),
+                           **KWARGS_READ_CSV)
 
     if isinstance(fold_id, int):
-        removal_index = pd.DatetimeIndex(
-            bp.unpack_ndarray_file(func_gen_filepath("crossval{f}".format(f=fold_id)))
-        )
-
+        crossval_index_filename = '.'.join([train_filepath_prefix,
+                                            "index.crossval{f}".format(f=fold_id),
+                                            location + ".blp"])
+        removal_index = pd.DatetimeIndex(bp.unpack_ndarray_file(crossval_index_filename))
         df_train.drop(removal_index, axis=0, inplace=True)
 
     df_train.dropna(axis=0, how="any", inplace=True)
@@ -57,7 +65,18 @@ def get_train_X_y(train_filepath_prefix, train_filepath_suffix, fold_id=None):
 @click.option("-v", "predict_target", flag_value="crossval")
 @click.option("--location", "-l", type=str, default=None)
 @click.option("--fold-id", "-f", type=int)
-def main(location, predict_target, fold_id):
+@click.option("--n_estimators", type=int, default=1000)
+@click.option("--max_depth", type=int, default=3)
+@click.option("--learning_rate", type=float, default=0.1)
+@click.option("--reg_lambda", type=float, default=1.0)
+@click.option("--reg_alpha", type=float, default=0.0)
+@click.option("--subsample", type=float, default=0.8)
+@click.option("--colsample_bytree", type=float, default=0.8)
+@click.option("--seed", type=int, default=0)
+def main(location, predict_target, fold_id,
+         n_estimators, max_depth, learning_rate,
+         reg_lambda, reg_alpha,
+         subsample, colsample_bytree, seed):
     logger = logging.getLogger(__name__)
     logger.info('#0: train models')
 
@@ -69,24 +88,27 @@ def main(location, predict_target, fold_id):
     else:
         location_list = [location, ]
 
+    XGB_PARAMS = gen_params_dict(n_estimators, max_depth, learning_rate,
+                                 reg_lambda, reg_alpha,
+                                 subsample, colsample_bytree, seed)
+    param_str = str()
+    for (key, value) in XGB_PARAMS.items():
+        param_str += "{k}_{v}.".format(k=key, v=value)
+
     for place in location_list:
         if predict_target == "test":
             logger.info('#1: fit the model with all training dataset @ {l} !'.format(l=place))
 
-            train_X_y = get_train_X_y(TRAIN_FILEPATH_PREFIX,
-                                      place + '.' + TRAIN_FILEPATH_EXTENTION,
-                                      fold_id=None)
-            m = MyXGBRegressor(model_name="test.{l}".format(l=place), params=XGB_PARAMS)
+            train_X_y = get_train_X_y(TRAIN_FILEPATH_PREFIX, place, fold_id=None)
+            m = MyXGBRegressor(model_name=param_str + "test.{l}".format(l=place), params=XGB_PARAMS)
         elif predict_target == "crossval":
             if fold_id is None:
                 raise ValueError("Specify validation dataset number as an integer !")
 
             logger.info('#1: fit the model without fold-id: {f} @ {l} !'.format(f=fold_id, l=place))
 
-            train_X_y = get_train_X_y(TRAIN_FILEPATH_PREFIX,
-                                      place + '.' + TRAIN_FILEPATH_EXTENTION,
-                                      fold_id=fold_id)
-            m = MyXGBRegressor(model_name="crossval{i}.{l}".format(i=fold_id, l=place), params=XGB_PARAMS)
+            train_X_y = get_train_X_y(TRAIN_FILEPATH_PREFIX, place, fold_id=fold_id)
+            m = MyXGBRegressor(model_name=param_str + "crossval{i}.{l}".format(i=fold_id, l=place), params=XGB_PARAMS)
         else:
             raise ValueError("Invalid flag, '-t' or '-v' is permitted !")
 
