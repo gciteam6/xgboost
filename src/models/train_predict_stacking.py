@@ -147,7 +147,7 @@ def main(predict_target, location):
         stacker.X_train_ = stacker.get_concatenated_xgb_predict("crossval", place)
         stacker.X_train_.to_csv(
             path.join(stacker.PROCESSED_DATA_BASEPATH,
-                      "dataset.predict_y.layer_0.crossval.{l}.tsv".format(l=location)),
+                      "dataset.predict_y.layer_0.crossval.{l}.tsv".format(l=place)),
             **KWARGS_TO_CSV
         )
         stacker.X_train_ = stacker.X_train_.loc[:, ~stacker.X_train_.isnull().any()]
