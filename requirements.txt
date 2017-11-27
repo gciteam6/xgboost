@@ -22,6 +22,5 @@ ipython
 jupyter
 paramz
 h5py
-GPy
 tensorflow
 keras
