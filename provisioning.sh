@@ -11,6 +11,7 @@ sudo yum install -y \
     sqlite \
     sqlite-devel \
     openssl-devel \
+    tk-devel \
     xz \
     xz-devel \
     tmux
@@ -23,7 +24,7 @@ echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\n  eval "$(pyenv init -)"\nf
 
 source ~/.bashrc
 
-pyenv install -s 3.6.2  \
-    && pyenv global 3.6.2 \
+pyenv install -s 3.5.3 \
+    && pyenv global 3.5.3 \
     && pip install --upgrade pip setuptools python-dateutil \
     && pip --no-cache-dir install -r requirements.txt
