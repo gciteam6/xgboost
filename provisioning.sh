@@ -14,6 +14,7 @@ sudo yum install -y \
     tk-devel \
     xz \
     xz-devel \
+    graphviz \
     tmux
 
 git clone https://github.com/yyuu/pyenv.git ~/.pyenv
