@@ -20,3 +20,10 @@ wheel
 pygments
 ipython
 jupyter
+h5py
+pydot
+graphviz
+tensorflow
+keras
+networkx==1.11
+hyperopt==0.1
